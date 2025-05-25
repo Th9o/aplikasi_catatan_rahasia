@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "932534310803",
+    "project_id": "catatanrahasia",
+    "storage_bucket": "catatanrahasia.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:932534310803:android:9872feeb6003f5b8c17a66",
+        "android_client_info": {
+          "package_name": "AndroidManifest.xml"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDeVFcB0gaU_DW7Df4judwsaSFHZ6fjw6U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
