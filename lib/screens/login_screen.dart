@@ -18,16 +18,23 @@ class _LoginScreenState extends State<LoginScreen> {
   String? errorMessage;
 
   void handleLogin() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      setState(() {
+        errorMessage = "Email dan Password tidak boleh kosong.";
+      });
+      return;
+    }
+
     setState(() {
       isLoading = true;
       errorMessage = null;
     });
 
     try {
-      final user = await auth.login(
-        emailController.text,
-        passwordController.text,
-      );
+      final user = await auth.login(email, password);
       if (user != null && mounted) {
         Navigator.pushReplacement(
           context,
