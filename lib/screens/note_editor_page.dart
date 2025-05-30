@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
+import '../services/note_service.dart';
 
 class NoteEditorPage extends StatefulWidget {
   const NoteEditorPage({super.key});
@@ -10,6 +12,7 @@ class NoteEditorPage extends StatefulWidget {
 class _NoteEditorPageState extends State<NoteEditorPage> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
+  final _noteService = NoteService();
 
   @override
   void dispose() {
@@ -18,24 +21,34 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     super.dispose();
   }
 
-  void _saveNote() {
+  void _saveNote() async {
     final title = _titleController.text.trim();
     final content = _contentController.text.trim();
 
     if (title.isEmpty || content.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Judul dan isi catatan tidak boleh kosong.")),
+        const SnackBar(
+          content: Text("Judul dan isi catatan tidak boleh kosong."),
+        ),
       );
       return;
     }
 
-    // TODO: Simpan ke database atau storage
+    try {
+      final userId = await AuthService().getCurrentUserId();
+      if (userId == null) throw Exception("User ID tidak ditemukan");
 
-    Navigator.pop(context, {
-      'title': title,
-      'content': content,
-      'created_at': DateTime.now().toIso8601String(),
-    });
+      final fullNote = "$title\n$content";
+      await _noteService.saveNote(userId, fullNote);
+
+      if (context.mounted) Navigator.pop(context);
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Gagal menyimpan catatan: $e")));
+      }
+    }
   }
 
   @override

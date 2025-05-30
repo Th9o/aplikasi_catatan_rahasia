@@ -28,4 +28,10 @@ class AuthService {
   }
 
   Stream<User?> get userStream => _auth.authStateChanges();
+
+  // ✅ Fungsi yang sebelumnya kosong — sekarang sudah berfungsi
+  Future<String?> getCurrentUserId() async {
+    final user = _auth.currentUser;
+    return user?.uid;
+  }
 }

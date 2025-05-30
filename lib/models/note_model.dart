@@ -1,26 +1,19 @@
 class Note {
   final String id;
   final String encryptedContent;
-  final DateTime createdAt;
+  final String? decryptedContent;
 
   Note({
     required this.id,
     required this.encryptedContent,
-    required this.createdAt,
+    this.decryptedContent,
   });
 
-  Map<String, dynamic> toMap() {
-    return {
-      'encryptedContent': encryptedContent,
-      'createdAt': createdAt.toIso8601String(),
-    };
+  factory Note.fromMap(String id, Map<String, dynamic> map) {
+    return Note(id: id, encryptedContent: map['encryptedContent'] ?? '');
   }
 
-  factory Note.fromMap(String id, Map<String, dynamic> map) {
-    return Note(
-      id: id,
-      encryptedContent: map['encryptedContent'],
-      createdAt: DateTime.parse(map['createdAt']),
-    );
+  Map<String, dynamic> toMap() {
+    return {'encryptedContent': encryptedContent};
   }
 }

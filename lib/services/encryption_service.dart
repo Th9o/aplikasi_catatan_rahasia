@@ -1,39 +1,22 @@
-import 'dart:convert';
 import 'package:encrypt/encrypt.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'dart:convert';
 
 class EncryptionService {
-  static const _keyStorageKey = 'encryption_key';
-  final _secureStorage = const FlutterSecureStorage();
+  // Gunakan kunci AES 32 byte (256 bit)
+  static final _key = Key.fromUtf8(
+    'my32lengthsupersecretnooneknows!',
+  ); // Panjang harus 32 karakter
+  static final _iv = IV.fromLength(16); // IV statis: tidak aman untuk produksi
 
-  Future<Encrypter> _getEncrypter() async {
-    String? base64Key = await _secureStorage.read(key: _keyStorageKey);
-
-    if (base64Key == null) {
-      final key = Key.fromSecureRandom(32);
-      base64Key = base64.encode(key.bytes);
-      await _secureStorage.write(key: _keyStorageKey, value: base64Key);
-    }
-
-    final key = Key(base64.decode(base64Key));
-    final iv = IV.fromLength(
-      16,
-    ); // gunakan IV default (bisa juga simpan per catatan)
-
-    return Encrypter(AES(key));
-  }
+  final _encrypter = Encrypter(AES(_key));
 
   Future<String> encrypt(String plainText) async {
-    final encrypter = await _getEncrypter();
-    final iv = IV.fromLength(16);
-    final encrypted = encrypter.encrypt(plainText, iv: iv);
+    final encrypted = _encrypter.encrypt(plainText, iv: _iv);
     return encrypted.base64;
   }
 
   Future<String> decrypt(String encryptedText) async {
-    final encrypter = await _getEncrypter();
-    final iv = IV.fromLength(16);
-    final decrypted = encrypter.decrypt64(encryptedText, iv: iv);
+    final decrypted = _encrypter.decrypt64(encryptedText, iv: _iv);
     return decrypted;
   }
 }

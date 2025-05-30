@@ -6,6 +6,7 @@ class NoteService {
   final _db = FirebaseFirestore.instance;
   final _encryptor = EncryptionService();
 
+  // Simpan catatan terenkripsi
   Future<void> saveNote(String userId, String plainContent) async {
     final encrypted = await _encryptor.encrypt(plainContent);
     final newNote = {
@@ -15,6 +16,7 @@ class NoteService {
     await _db.collection('users').doc(userId).collection('notes').add(newNote);
   }
 
+  // Ambil catatan terenkripsi
   Future<List<Note>> getNotes(String userId) async {
     final query =
         await _db
@@ -27,6 +29,7 @@ class NoteService {
     return query.docs.map((doc) => Note.fromMap(doc.id, doc.data())).toList();
   }
 
+  // Hapus catatan
   Future<void> deleteNote(String userId, String noteId) async {
     await _db
         .collection('users')
@@ -36,7 +39,27 @@ class NoteService {
         .delete();
   }
 
+  // Dekripsi satu catatan
   Future<String> decryptNoteContent(String encryptedContent) async {
     return await _encryptor.decrypt(encryptedContent);
+  }
+
+  // ✅ Ambil dan dekripsi semua catatan
+  Future<List<Note>> getDecryptedNotes(String userId) async {
+    final encryptedNotes = await getNotes(userId);
+    final List<Note> decryptedNotes = [];
+
+    for (var note in encryptedNotes) {
+      final decrypted = await _encryptor.decrypt(note.encryptedContent);
+      decryptedNotes.add(
+        Note(
+          id: note.id,
+          encryptedContent: note.encryptedContent,
+          decryptedContent: decrypted,
+        ),
+      );
+    }
+
+    return decryptedNotes;
   }
 }
