@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
-import 'home_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -51,10 +50,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
     try {
       final user = await auth.register(email, password);
       if (user != null && mounted) {
-        Navigator.pushAndRemoveUntil(
+        await auth.logout(); // Logout otomatis setelah daftar
+
+        // ✅ Tampilkan pesan sukses
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Akun berhasil dibuat. Silakan login."),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        // Navigasi ke halaman login
+        Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-          (route) => false,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
         );
       }
     } catch (e) {
