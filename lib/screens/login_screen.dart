@@ -15,8 +15,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final passwordController = TextEditingController();
   final auth = AuthService();
   bool isLoading = false;
-  String? errorMessage;
   bool _obscurePassword = true;
+  String? errorMessage;
 
   void handleLogin() async {
     final email = emailController.text.trim();
@@ -43,9 +43,19 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (e) {
-      setState(() {
-        errorMessage = "Login gagal: ${e.toString()}";
-      });
+      final err = e.toString();
+
+      if (err.contains('invalid-email')) {
+        errorMessage = "Format email tidak valid.";
+      } else if (err.contains('invalid-credential') ||
+          err.contains('wrong-password') ||
+          err.contains('user-not-found')) {
+        errorMessage = "Email atau password salah.";
+      } else {
+        errorMessage = "Terjadi kesalahan: ${e.toString()}";
+      }
+
+      setState(() {});
     }
 
     setState(() {
@@ -94,7 +104,11 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 16),
             if (errorMessage != null)
-              Text(errorMessage!, style: const TextStyle(color: Colors.red)),
+              Text(
+                errorMessage!,
+                style: const TextStyle(color: Colors.red),
+                textAlign: TextAlign.center,
+              ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: isLoading ? null : handleLogin,
@@ -123,12 +137,14 @@ class _LoginScreenState extends State<LoginScreen> {
                 if (email.isNotEmpty) {
                   await auth.resetPassword(email);
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Cek email untuk reset password"),
-                      ),
-                    );
+                    setState(() {
+                      errorMessage = "Link reset password telah dikirim.";
+                    });
                   }
+                } else {
+                  setState(() {
+                    errorMessage = "Masukkan email terlebih dahulu.";
+                  });
                 }
               },
               child: const Text("Lupa Password?"),
