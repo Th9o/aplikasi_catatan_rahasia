@@ -1,12 +1,9 @@
 import 'package:encrypt/encrypt.dart';
-import 'dart:convert';
 
 class EncryptionService {
-  // Gunakan kunci AES 32 byte (256 bit)
-  static final _key = Key.fromUtf8(
-    'my32lengthsupersecretnooneknows!',
-  ); // Panjang harus 32 karakter
-  static final _iv = IV.fromLength(16); // IV statis: tidak aman untuk produksi
+  // ✅ Kunci AES 32 karakter (256-bit)
+  static final _key = Key.fromUtf8('my32lengthsupersecretnooneknows!');
+  static final _iv = IV.fromLength(16); // IV tetap
 
   final _encrypter = Encrypter(AES(_key));
 
