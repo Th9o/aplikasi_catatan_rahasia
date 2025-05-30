@@ -16,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final auth = AuthService();
   bool isLoading = false;
   String? errorMessage;
+  bool _obscurePassword = true;
 
   void handleLogin() async {
     final email = emailController.text.trim();
@@ -55,30 +56,58 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
-      body: Padding(
+      appBar: AppBar(
+        title: const Text('Login'),
+        automaticallyImplyLeading: false,
+      ),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            const SizedBox(height: 32),
             TextField(
               controller: emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(
+                labelText: 'Email',
+                border: OutlineInputBorder(),
+              ),
             ),
+            const SizedBox(height: 16),
             TextField(
               controller: passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
-              obscureText: true,
+              obscureText: _obscurePassword,
+              decoration: InputDecoration(
+                labelText: 'Password',
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _obscurePassword = !_obscurePassword;
+                    });
+                  },
+                ),
+              ),
             ),
             const SizedBox(height: 16),
             if (errorMessage != null)
               Text(errorMessage!, style: const TextStyle(color: Colors.red)),
+            const SizedBox(height: 16),
             ElevatedButton(
               onPressed: isLoading ? null : handleLogin,
               child:
                   isLoading
-                      ? const CircularProgressIndicator()
+                      ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
                       : const Text('Login'),
             ),
+            const SizedBox(height: 12),
             TextButton(
               onPressed: () {
                 Navigator.push(
@@ -90,13 +119,16 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             TextButton(
               onPressed: () async {
-                if (emailController.text.isNotEmpty) {
-                  await auth.resetPassword(emailController.text);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Cek email untuk reset password"),
-                    ),
-                  );
+                final email = emailController.text.trim();
+                if (email.isNotEmpty) {
+                  await auth.resetPassword(email);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Cek email untuk reset password"),
+                      ),
+                    );
+                  }
                 }
               },
               child: const Text("Lupa Password?"),
