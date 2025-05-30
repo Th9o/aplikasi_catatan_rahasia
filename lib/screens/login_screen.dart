@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'register_screen.dart';
 import 'home_screen.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -60,6 +61,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() {
       isLoading = false;
+    });
+  }
+
+  void clearInputs() {
+    emailController.clear();
+    passwordController.clear();
+    setState(() {
+      errorMessage = null;
     });
   }
 
@@ -123,29 +132,23 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 12),
             TextButton(
-              onPressed: () {
-                Navigator.push(
+              onPressed: () async {
+                await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const RegisterScreen()),
                 );
+                clearInputs(); // Bersihkan form setelah kembali dari Register
               },
               child: const Text("Belum punya akun? Daftar di sini"),
             ),
             TextButton(
-              onPressed: () async {
-                final email = emailController.text.trim();
-                if (email.isNotEmpty) {
-                  await auth.resetPassword(email);
-                  if (context.mounted) {
-                    setState(() {
-                      errorMessage = "Link reset password telah dikirim.";
-                    });
-                  }
-                } else {
-                  setState(() {
-                    errorMessage = "Masukkan email terlebih dahulu.";
-                  });
-                }
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ForgotPasswordScreen(),
+                  ),
+                );
               },
               child: const Text("Lupa Password?"),
             ),
