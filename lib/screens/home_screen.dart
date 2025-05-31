@@ -22,9 +22,7 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() => _isLoading = true);
       final userId = await AuthService().getCurrentUserId();
 
-      if (userId == null) {
-        throw Exception('User ID tidak ditemukan.');
-      }
+      if (userId == null) throw Exception('User ID tidak ditemukan.');
 
       final notes = await _noteService.getDecryptedNotes(userId);
       setState(() {
@@ -36,9 +34,9 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() => _isLoading = false);
 
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Terjadi kesalahan: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Terjadi kesalahan: $e')),
+        );
       }
     }
   }
@@ -57,9 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Color.fromRGBO(113, 104, 104, 1),
-              ),
+              decoration: BoxDecoration(color: Color.fromRGBO(113, 104, 104, 1)),
               child: Center(
                 child: Text(
                   'Menu',
@@ -103,36 +99,54 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _notes.isEmpty
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _notes.isEmpty
               ? const Center(child: Text("Belum ada catatan."))
               : ListView.builder(
-                itemCount: _notes.length,
-                itemBuilder: (context, index) {
-                  final note = _notes[index];
-                  return ListTile(
-                    title: Text(
-                      note.decryptedContent?.split('\n').first ?? 'Tanpa Judul',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Text(
-                      note.decryptedContent ?? '',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  );
-                },
-              ),
+                  itemCount: _notes.length,
+                  itemBuilder: (context, index) {
+                    final note = _notes[index];
+                    final title = note.decryptedContent?.split('\n').first ?? 'Tanpa Judul';
+                    final content = note.decryptedContent ?? '';
+
+                    return ListTile(
+                      title: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Text(
+                        content,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.edit),
+                        tooltip: 'Edit Catatan',
+                        onPressed: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => NoteEditorPage(
+                                existingNoteId: note.id,
+                                existingNoteContent: content,
+                              ),
+                            ),
+                          );
+                          _loadNotes(); // refresh setelah kembali dari edit
+                        },
+                      ),
+                    );
+                  },
+                ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const NoteEditorPage()),
           );
-          _loadNotes(); // Refresh setelah kembali
+          _loadNotes(); // Refresh setelah kembali dari tambah
         },
         child: const Icon(Icons.add),
         tooltip: 'Tambah Catatan',

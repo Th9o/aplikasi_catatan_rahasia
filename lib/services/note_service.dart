@@ -6,7 +6,7 @@ class NoteService {
   final _db = FirebaseFirestore.instance;
   final _encryptor = EncryptionService();
 
-  // Simpan catatan terenkripsi (dengan IV acak)
+  // Simpan catatan baru terenkripsi
   Future<void> saveNote(String userId, String plainContent) async {
     final encrypted = await _encryptor.encrypt(plainContent);
     final newNote = {
@@ -17,36 +17,47 @@ class NoteService {
     await _db.collection('users').doc(userId).collection('notes').add(newNote);
   }
 
-  // Ambil catatan terenkripsi (tanpa dekripsi)
+  // Update catatan yang sudah ada (dengan IV baru)
+  Future<void> updateNote(String userId, String noteId, String updatedContent) async {
+    final encrypted = await _encryptor.encrypt(updatedContent);
+    final updatedNote = {
+      'encryptedContent': encrypted['content'],
+      'iv': encrypted['iv'],
+      'updatedAt': DateTime.now().toIso8601String(),
+    };
+    await _db
+        .collection('users')
+        .doc(userId)
+        .collection('notes')
+        .doc(noteId)
+        .update(updatedNote);
+  }
+
+  // Ambil catatan (tanpa didekripsi)
   Future<List<Note>> getNotes(String userId) async {
-    final query =
-        await _db
-            .collection('users')
-            .doc(userId)
-            .collection('notes')
-            .orderBy('createdAt', descending: true)
-            .get();
+    final query = await _db
+        .collection('users')
+        .doc(userId)
+        .collection('notes')
+        .orderBy('createdAt', descending: true)
+        .get();
 
     return query.docs.map((doc) => Note.fromMap(doc.id, doc.data())).toList();
   }
 
-  // Dekripsi satu konten catatan
-  Future<String> decryptNoteContent(
-    String encryptedText,
-    String base64IV,
-  ) async {
+  // Dekripsi satu catatan
+  Future<String> decryptNoteContent(String encryptedText, String base64IV) async {
     return await _encryptor.decrypt(encryptedText, base64IV);
   }
 
-  // Ambil dan dekripsi seluruh catatan
+  // Ambil semua catatan dan dekripsi
   Future<List<Note>> getDecryptedNotes(String userId) async {
-    final query =
-        await _db
-            .collection('users')
-            .doc(userId)
-            .collection('notes')
-            .orderBy('createdAt', descending: true)
-            .get();
+    final query = await _db
+        .collection('users')
+        .doc(userId)
+        .collection('notes')
+        .orderBy('createdAt', descending: true)
+        .get();
 
     final List<Note> decryptedNotes = [];
 
@@ -66,7 +77,6 @@ class NoteService {
         );
       } catch (e) {
         print('❌ Gagal dekripsi catatan ${doc.id}: $e');
-        // Bisa ditambahkan handling fallback di sini
       }
     }
 
