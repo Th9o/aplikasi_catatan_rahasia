@@ -53,47 +53,87 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Lupa Password')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const SizedBox(height: 32),
-            const Text(
-              "Masukkan email akun Anda untuk mengirim link reset password.",
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            TextField(
-              controller: emailController,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
+      backgroundColor: const Color(0xFFF7F3FF),
+      appBar: AppBar(
+        title: const Text('Lupa Password'),
+        backgroundColor: const Color(0xFF6A5AE0),
+        foregroundColor: Colors.white,
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              const Icon(
+                Icons.lock_reset_rounded,
+                size: 72,
+                color: Color(0xFF6A5AE0),
               ),
-            ),
-            const SizedBox(height: 16),
-            if (message != null)
+              const SizedBox(height: 16),
               Text(
-                message!,
-                style: TextStyle(
-                  color:
-                      message!.contains("dikirim") ? Colors.green : Colors.red,
+                'Reset Password',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
                 ),
               ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: isLoading ? null : handleReset,
-              child:
-                  isLoading
-                      ? const SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                      : const Text('Kirim Link Reset'),
-            ),
-          ],
+              const SizedBox(height: 8),
+              const Text(
+                'Masukkan email akun Anda untuk mengirimkan link reset.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.black54),
+              ),
+              const SizedBox(height: 24),
+              TextField(
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: const Icon(Icons.email_outlined),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 16),
+              if (message != null)
+                Text(
+                  message!,
+                  style: TextStyle(
+                    color:
+                        message!.contains("dikirim")
+                            ? Colors.green
+                            : Colors.red,
+                  ),
+                ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6A5AE0),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  onPressed: isLoading ? null : handleReset,
+                  child:
+                      isLoading
+                          ? const CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          )
+                          : const Text(
+                            'Kirim Link Reset',
+                            style: TextStyle(color: Colors.white, fontSize: 16),
+                          ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
