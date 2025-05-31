@@ -22,7 +22,9 @@ class _HomeScreenState extends State<HomeScreen> {
       setState(() => _isLoading = true);
       final userId = await AuthService().getCurrentUserId();
 
-      if (userId == null) throw Exception('User ID tidak ditemukan.');
+      if (userId == null) {
+        throw Exception('User ID tidak ditemukan.');
+      }
 
       final notes = await _noteService.getDecryptedNotes(userId);
       setState(() {
@@ -32,11 +34,10 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       debugPrint('Gagal memuat catatan: $e');
       setState(() => _isLoading = false);
-
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Terjadi kesalahan: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Terjadi kesalahan: $e')));
       }
     }
   }
@@ -50,16 +51,25 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Catatan Rahasia')),
+      backgroundColor: const Color(0xFFF7F3FF),
+      appBar: AppBar(
+        title: const Text('Catatan Rahasia'),
+        backgroundColor: const Color(0xFF6A5AE0),
+        foregroundColor: Colors.white,
+      ),
       drawer: Drawer(
         child: Column(
           children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Color.fromRGBO(113, 104, 104, 1)),
-              child: Center(
+            DrawerHeader(
+              decoration: const BoxDecoration(color: Color(0xFF6A5AE0)),
+              child: Align(
+                alignment: Alignment.bottomLeft,
                 child: Text(
                   'Menu',
-                  style: TextStyle(color: Colors.white, fontSize: 25),
+                  style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ),
@@ -75,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const Spacer(),
             Padding(
-              padding: const EdgeInsets.only(bottom: 5.0, right: 10.0),
+              padding: const EdgeInsets.only(bottom: 10, right: 16),
               child: Align(
                 alignment: Alignment.bottomRight,
                 child: TextButton.icon(
@@ -99,57 +109,89 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _notes.isEmpty
-              ? const Center(child: Text("Belum ada catatan."))
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : _notes.isEmpty
+              ? const Center(
+                child: Text(
+                  "Belum ada catatan.",
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+              )
               : ListView.builder(
-                  itemCount: _notes.length,
-                  itemBuilder: (context, index) {
-                    final note = _notes[index];
-                    final title = note.decryptedContent?.split('\n').first ?? 'Tanpa Judul';
-                    final content = note.decryptedContent ?? '';
+                padding: const EdgeInsets.all(16),
+                itemCount: _notes.length,
+                itemBuilder: (context, index) {
+                  final note = _notes[index];
+                  final title =
+                      note.decryptedContent?.split('\n').first ?? 'Tanpa Judul';
+                  final body =
+                      note.decryptedContent?.split('\n').skip(1).join('\n') ??
+                      '';
 
-                    return ListTile(
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 3,
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       title: Text(
                         title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       subtitle: Text(
-                        content,
-                        maxLines: 2,
+                        body,
+                        maxLines: 3,
                         overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54,
+                        ),
                       ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.edit),
-                        tooltip: 'Edit Catatan',
-                        onPressed: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => NoteEditorPage(
-                                existingNoteId: note.id,
-                                existingNoteContent: content,
-                              ),
-                            ),
-                          );
-                          _loadNotes(); // refresh setelah kembali dari edit
-                        },
-                      ),
-                    );
-                  },
-                ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const NoteEditorPage()),
-          );
-          _loadNotes(); // Refresh setelah kembali dari tambah
-        },
-        child: const Icon(Icons.add),
-        tooltip: 'Tambah Catatan',
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (_) => NoteEditorPage(
+                                  existingNoteId: note.id,
+                                  existingNoteContent: note.decryptedContent,
+                                ),
+                          ),
+                        );
+                        _loadNotes();
+                      },
+                    ),
+                  );
+                },
+              ),
+      floatingActionButton: Container(
+        margin: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
+        ),
+        child: FloatingActionButton(
+          backgroundColor: const Color(0xFFD8CFFF),
+          onPressed: () async {
+            await Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const NoteEditorPage()),
+            );
+            _loadNotes();
+          },
+          child: const Icon(Icons.add, color: Colors.black),
+          tooltip: 'Tambah Catatan',
+        ),
       ),
     );
   }
