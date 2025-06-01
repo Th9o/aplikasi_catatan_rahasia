@@ -20,8 +20,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _isLoading = true;
   List<Note> _notes = [];
+  List<Note> _filteredNotes = [];
   String _userName = 'Pengguna';
   String _userEmail = 'Email tidak tersedia';
+  TextEditingController _searchController = TextEditingController();
 
   Future<void> _loadNotes() async {
     try {
@@ -38,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final notes = await _noteService.getDecryptedNotes(user.uid);
       setState(() {
         _notes = notes;
+        _filteredNotes = notes; // Awalnya tampilkan semua
         _isLoading = false;
       });
     } catch (e) {
@@ -55,6 +58,23 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadNotes();
+    _searchController.addListener(_filterNotes);
+  }
+
+  void _filterNotes() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredNotes = _notes.where((note) {
+        final content = note.decryptedContent?.toLowerCase() ?? '';
+        return content.contains(query);
+      }).toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -168,55 +188,76 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _notes.isEmpty
-              ? const Center(
-                  child: Text(
-                    "Belum ada catatan.",
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
-                )
-              : ListView.builder(
+          : Column(
+              children: [
+                Padding(
                   padding: const EdgeInsets.all(16),
-                  itemCount: _notes.length,
-                  itemBuilder: (context, index) {
-                    final note = _notes[index];
-                    final title = note.decryptedContent?.split('\n').first ?? 'Tanpa Judul';
-                    final body = note.decryptedContent?.split('\n').skip(1).join('\n') ?? '';
-
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Cari catatan...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      elevation: 3,
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        title: Text(
-                          title,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(
-                          body,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 14, color: Colors.black54),
-                        ),
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => NoteEditorPage(
-                                existingNoteId: note.id,
-                                existingNoteContent: note.decryptedContent,
-                              ),
-                            ),
-                          );
-                          _loadNotes();
-                        },
-                      ),
-                    );
-                  },
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                  ),
                 ),
+                Expanded(
+                  child: _filteredNotes.isEmpty
+                      ? const Center(
+                          child: Text(
+                            "Catatan tidak ditemukan.",
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: _filteredNotes.length,
+                          itemBuilder: (context, index) {
+                            final note = _filteredNotes[index];
+                            final title = note.decryptedContent?.split('\n').first ?? 'Tanpa Judul';
+                            final body = note.decryptedContent?.split('\n').skip(1).join('\n') ?? '';
+
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              elevation: 3,
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                title: Text(
+                                  title,
+                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                ),
+                                subtitle: Text(
+                                  body,
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(fontSize: 14, color: Colors.black54),
+                                ),
+                                onTap: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => NoteEditorPage(
+                                        existingNoteId: note.id,
+                                        existingNoteContent: note.decryptedContent,
+                                      ),
+                                    ),
+                                  );
+                                  _loadNotes();
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
       floatingActionButton: Container(
         margin: const EdgeInsets.all(8),
         decoration: const BoxDecoration(
