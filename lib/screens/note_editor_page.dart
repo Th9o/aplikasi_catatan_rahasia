@@ -24,7 +24,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   @override
   void initState() {
     super.initState();
-
     final content = widget.existingNoteContent ?? '';
     final title = content.split('\n').first;
     final body = content.split('\n').skip(1).join('\n');
@@ -58,10 +57,8 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
       final fullNote = "$title\n$content";
 
       if (widget.existingNoteId != null) {
-        // Mode edit
         await _noteService.updateNote(userId, widget.existingNoteId!, fullNote);
       } else {
-        // Mode tambah
         await _noteService.saveNote(userId, fullNote);
       }
 
@@ -80,39 +77,78 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     final isEditMode = widget.existingNoteId != null;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF7F3FF),
       appBar: AppBar(
         title: Text(isEditMode ? 'Edit Catatan' : 'Tambah Catatan'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.save),
-            tooltip: 'Simpan Catatan',
-            onPressed: _saveNote,
-          ),
-        ],
+        backgroundColor: const Color(0xFF6A5AE0),
+        foregroundColor: Colors.white,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SafeArea(
         child: Column(
           children: [
-            TextField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Judul',
-                border: OutlineInputBorder(),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    TextField(
+                      controller: _titleController,
+                      decoration: InputDecoration(
+                        labelText: 'Judul',
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      constraints: const BoxConstraints(minHeight: 300), // agar terlihat tinggi
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.3),
+                            spreadRadius: 1,
+                            blurRadius: 20,
+                            offset: const Offset(0, 12), // Bayangan ke bawah
+                          ),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _contentController,
+                        decoration: const InputDecoration.collapsed(
+                          hintText: 'Tulis isi catatan di sini...',
+                        ),
+                        maxLines: null,
+                        keyboardType: TextInputType.multiline,
+                        style: const TextStyle(fontSize: 16),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: TextField(
-                controller: _contentController,
-                decoration: const InputDecoration(
-                  labelText: 'Isi Catatan',
-                  alignLabelWithHint: true,
-                  border: OutlineInputBorder(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF6A5AE0),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
                 ),
-                maxLines: null,
-                expands: true,
-                keyboardType: TextInputType.multiline,
+                onPressed: _saveNote,
+                child: const Text(
+                  'Simpan',
+                  style: TextStyle(fontSize: 16, color: Colors.white),
+                ),
               ),
             ),
           ],
