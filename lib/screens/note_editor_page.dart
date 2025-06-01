@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/note_service.dart';
@@ -74,14 +75,16 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     final isEditMode = widget.existingNoteId != null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F3FF),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(isEditMode ? 'Edit Catatan' : 'Tambah Catatan'),
-        backgroundColor: const Color(0xFF6A5AE0),
-        foregroundColor: Colors.white,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
       ),
       body: SafeArea(
         child: Column(
@@ -97,36 +100,40 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
                       decoration: InputDecoration(
                         labelText: 'Judul',
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: theme.cardColor,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
+                      style: theme.textTheme.titleLarge,
                     ),
                     const SizedBox(height: 16),
                     Container(
-                      constraints: const BoxConstraints(minHeight: 300), // agar terlihat tinggi
+                      constraints: const BoxConstraints(minHeight: 300),
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: theme.cardColor,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.grey.withOpacity(0.3),
                             spreadRadius: 1,
                             blurRadius: 20,
-                            offset: const Offset(0, 12), // Bayangan ke bawah
+                            offset: const Offset(0, 12),
                           ),
                         ],
                       ),
                       child: TextField(
                         controller: _contentController,
-                        decoration: const InputDecoration.collapsed(
+                        decoration: InputDecoration.collapsed(
                           hintText: 'Tulis isi catatan di sini...',
+                          hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.textTheme.bodyMedium?.color?.withOpacity(0.6),
+                          ),
                         ),
                         maxLines: null,
                         keyboardType: TextInputType.multiline,
-                        style: const TextStyle(fontSize: 16),
+                        style: theme.textTheme.bodyMedium,
                       ),
                     ),
                   ],
@@ -138,16 +145,16 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
               width: double.infinity,
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF6A5AE0),
+                  backgroundColor: colorScheme.primary,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(30),
                   ),
                 ),
                 onPressed: _saveNote,
-                child: const Text(
+                child: Text(
                   'Simpan',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
+                  style: theme.textTheme.labelLarge?.copyWith(color: colorScheme.onPrimary),
                 ),
               ),
             ),
@@ -157,3 +164,4 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     );
   }
 }
+

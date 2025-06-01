@@ -1,4 +1,8 @@
+//settings_screen.dart
+
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/theme_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -8,15 +12,17 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _isDarkMode = false;
   bool _isFingerprintEnabled = false;
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final isDarkMode = themeProvider.isDarkMode;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Pengaturan'),
-        backgroundColor: const Color(0xFF6A5AE0),
+        backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white,
       ),
       body: ListView(
@@ -29,18 +35,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
           const SizedBox(height: 12),
           SwitchListTile(
             title: const Text('Mode Gelap'),
-            value: _isDarkMode,
-            activeColor: const Color(0xFF6A5AE0),
-            onChanged: (value) {
-              setState(() {
-                _isDarkMode = value;
-              });
-              // Tambahkan logika ganti tema jika menggunakan Theme Provider
-            },
+            value: isDarkMode,
+            activeColor: Theme.of(context).colorScheme.primary,
+            onChanged: (value) => themeProvider.toggleTheme(value),
             secondary: const Icon(Icons.dark_mode_outlined),
           ),
           const Divider(height: 32),
-
           const Text(
             'Keamanan',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -49,17 +49,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SwitchListTile(
             title: const Text('Gunakan Sidik Jari'),
             value: _isFingerprintEnabled,
-            activeColor: const Color(0xFF6A5AE0),
+            activeColor: Theme.of(context).colorScheme.primary,
             onChanged: (value) {
               setState(() {
                 _isFingerprintEnabled = value;
               });
-              // Tambahkan logika autentikasi biometrik bila perlu
             },
             secondary: const Icon(Icons.fingerprint),
           ),
           const Divider(height: 32),
-
           const Text(
             'Tentang',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -69,7 +67,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             leading: const Icon(Icons.info_outline),
             title: const Text('Versi Aplikasi'),
             subtitle: const Text('1.0.0'),
-            onTap: () {},
           ),
         ],
       ),

@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -22,47 +23,64 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     try {
       await user?.updateDisplayName(_nameController.text);
       await user?.reload();
-      Navigator.pop(context, true); // Kirim sinyal ke halaman sebelumnya
+      if (context.mounted) {
+        Navigator.pop(context, true);
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Gagal memperbarui profil: $e')),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memperbarui profil: $e')),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Edit Profil'),
-        backgroundColor: const Color(0xFF6A5AE0),
-        foregroundColor: Colors.white,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            const CircleAvatar(
+            CircleAvatar(
               radius: 40,
-              backgroundColor: Color(0xFF6A5AE0),
-              child: Icon(Icons.person, size: 40, color: Colors.white),
+              backgroundColor: colorScheme.primary,
+              child: Icon(Icons.person, size: 40, color: colorScheme.onPrimary),
             ),
             const SizedBox(height: 20),
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Nama Lengkap',
-                border: OutlineInputBorder(),
+                border: const OutlineInputBorder(),
+                filled: true,
+                fillColor: theme.cardColor,
               ),
+              style: theme.textTheme.bodyMedium,
             ),
             const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _saveProfile,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6A5AE0), 
-                foregroundColor: Colors.white, // 👉 Menetapkan warna teks jadi putih
+                backgroundColor: colorScheme.primary,
+                foregroundColor: colorScheme.onPrimary,
+                padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 32),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              child: const Text('Simpan'),
+              ),
+              child: Text(
+                'Simpan',
+                style: theme.textTheme.labelLarge?.copyWith(color: colorScheme.onPrimary),
+              ),
             ),
           ],
         ),

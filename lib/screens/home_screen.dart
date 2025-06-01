@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import '../services/auth_service.dart';
 import '../services/note_service.dart';
 import '../models/note_model.dart';
+
 import 'login_screen.dart';
 import 'note_editor_page.dart';
 import 'settings_screen.dart';
+import 'recycle_bin_screen.dart';
+import 'edit_profile_screen.dart'; // Tambahan
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -47,9 +51,9 @@ class _HomeScreenState extends State<HomeScreen> {
       debugPrint('Gagal memuat catatan: $e');
       setState(() => _isLoading = false);
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Terjadi kesalahan: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Terjadi kesalahan: $e')),
+        );
       }
     }
   }
@@ -64,11 +68,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void _filterNotes() {
     final query = _searchController.text.toLowerCase();
     setState(() {
-      _filteredNotes =
-          _notes.where((note) {
-            final content = note.decryptedContent?.toLowerCase() ?? '';
-            return content.contains(query);
-          }).toList();
+      _filteredNotes = _notes
+          .where((note) =>
+              (note.decryptedContent ?? '').toLowerCase().contains(query))
+          .toList();
     });
   }
 
@@ -80,74 +83,83 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F3FF),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Catatan Rahasia'),
-        backgroundColor: const Color(0xFF6A5AE0),
-        foregroundColor: Colors.white,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
       ),
       drawer: Drawer(
-        backgroundColor: Colors.white,
+        backgroundColor: theme.cardColor,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF6A5AE0), Color(0xFF8E80F9)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+            // Bagian Header - Klik untuk Edit Profile
+            InkWell(
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const EditProfileScreen(),
+                  ),
+                );
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      colorScheme.primary,
+                      colorScheme.primary.withOpacity(0.8)
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
-              ),
-              padding: const EdgeInsets.only(
-                top: 48,
-                bottom: 24,
-                left: 20,
-                right: 20,
-              ),
-              child: Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.white,
-                    child: Icon(
-                      Icons.person,
-                      size: 30,
-                      color: Color(0xFF6A5AE0),
+                padding: const EdgeInsets.only(
+                    top: 48, bottom: 24, left: 20, right: 20),
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.white,
+                      child: Icon(Icons.person,
+                          size: 30, color: colorScheme.primary),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _userName,
-                          style: Theme.of(
-                            context,
-                          ).textTheme.titleLarge!.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _userName,
+                            style: theme.textTheme.titleLarge!.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _userEmail,
-                          style: Theme.of(context).textTheme.bodySmall!
-                              .copyWith(color: Colors.white70),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          Text(
+                            _userEmail,
+                            style: theme.textTheme.bodySmall!
+                                .copyWith(color: Colors.white70),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
             _buildDrawerItem(
               icon: Icons.note_alt_outlined,
               title: 'Semua Catatan',
-              color: const Color(0xFF6A5AE0),
+              color: colorScheme.primary,
               onTap: () => Navigator.pop(context),
             ),
             _buildDrawerItem(
@@ -155,12 +167,12 @@ class _HomeScreenState extends State<HomeScreen> {
               title: 'Sampah',
               color: Colors.redAccent,
               onTap: () async {
-                Navigator.pop(context); // Tutup drawer
+                Navigator.pop(context);
                 await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const RecycleBinScreen()),
                 );
-                _loadNotes(); // Refresh catatan setelah kembali
+                _loadNotes();
               },
             ),
             _buildDrawerItem(
@@ -181,7 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
+                  backgroundColor: theme.cardColor,
                   foregroundColor: Colors.red,
                   side: const BorderSide(color: Colors.red),
                   shape: RoundedRectangleBorder(
@@ -206,153 +218,126 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Cari catatan...',
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: Colors.white,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Cari catatan...',
+                      prefixIcon: const Icon(Icons.search),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
+                      filled: true,
+                      fillColor: theme.cardColor,
                     ),
+                    style: theme.textTheme.bodyMedium,
                   ),
-                  Expanded(
-                    child:
-                        _filteredNotes.isEmpty
-                            ? const Center(
-                              child: Text(
-                                "Catatan tidak ditemukan.",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey,
+                ),
+                Expanded(
+                  child: _filteredNotes.isEmpty
+                      ? Center(
+                          child: Text(
+                            "Catatan tidak ditemukan.",
+                            style: theme.textTheme.bodyLarge!
+                                .copyWith(color: Colors.grey),
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: _filteredNotes.length,
+                          itemBuilder: (context, index) {
+                            final note = _filteredNotes[index];
+                            final title = note.decryptedContent
+                                    ?.split('\n')
+                                    .first ??
+                                'Tanpa Judul';
+                            final body = note.decryptedContent
+                                    ?.split('\n')
+                                    .skip(1)
+                                    .join('\n') ??
+                                '';
+
+                            return Card(
+                              margin: const EdgeInsets.only(bottom: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              color: theme.cardColor,
+                              elevation: 3,
+                              child: ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
+                                title: Text(
+                                  title,
+                                  style: theme.textTheme.titleMedium,
+                                ),
+                                subtitle: Text(
+                                  body,
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodySmall,
+                                ),
+                                onTap: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => NoteEditorPage(
+                                        existingNoteId: note.id,
+                                        existingNoteContent:
+                                            note.decryptedContent,
+                                      ),
+                                    ),
+                                  );
+                                  _loadNotes();
+                                },
+                                trailing: IconButton(
+                                  icon: const Icon(Icons.delete,
+                                      color: Colors.redAccent),
+                                  onPressed: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (_) => AlertDialog(
+                                        title: const Text('Hapus Catatan'),
+                                        content: const Text(
+                                            'Yakin ingin memindahkan catatan ke Sampah?'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, false),
+                                            child: const Text('Batal'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () =>
+                                                Navigator.pop(context, true),
+                                            child: const Text('Hapus'),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+
+                                    if (confirm == true) {
+                                      final user = FirebaseAuth
+                                          .instance.currentUser;
+                                      if (user != null) {
+                                        await _noteService.moveToTrash(
+                                            user.uid, note.id);
+                                        _loadNotes();
+                                      }
+                                    }
+                                  },
                                 ),
                               ),
-                            )
-                            : ListView.builder(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              itemCount: _filteredNotes.length,
-                              itemBuilder: (context, index) {
-                                final note = _filteredNotes[index];
-                                final title =
-                                    note.decryptedContent?.split('\n').first ??
-                                    'Tanpa Judul';
-                                final body =
-                                    note.decryptedContent
-                                        ?.split('\n')
-                                        .skip(1)
-                                        .join('\n') ??
-                                    '';
-
-                                return Card(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                  ),
-                                  elevation: 3,
-                                  child: ListTile(
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 12,
-                                    ),
-                                    title: Text(
-                                      title,
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    subtitle: Text(
-                                      body,
-                                      maxLines: 3,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.black54,
-                                      ),
-                                    ),
-                                    onTap: () async {
-                                      await Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder:
-                                              (_) => NoteEditorPage(
-                                                existingNoteId: note.id,
-                                                existingNoteContent:
-                                                    note.decryptedContent,
-                                              ),
-                                        ),
-                                      );
-                                      _loadNotes();
-                                    },
-                                    trailing: IconButton(
-                                      icon: const Icon(
-                                        Icons.delete,
-                                        color: Colors.redAccent,
-                                      ),
-                                      onPressed: () async {
-                                        final confirm = await showDialog<bool>(
-                                          context: context,
-                                          builder:
-                                              (_) => AlertDialog(
-                                                title: const Text(
-                                                  'Hapus Catatan',
-                                                ),
-                                                content: const Text(
-                                                  'Yakin ingin memindahkan catatan ke Sampah?',
-                                                ),
-                                                actions: [
-                                                  TextButton(
-                                                    onPressed:
-                                                        () => Navigator.pop(
-                                                          context,
-                                                          false,
-                                                        ),
-                                                    child: const Text('Batal'),
-                                                  ),
-                                                  TextButton(
-                                                    onPressed:
-                                                        () => Navigator.pop(
-                                                          context,
-                                                          true,
-                                                        ),
-                                                    child: const Text('Hapus'),
-                                                  ),
-                                                ],
-                                              ),
-                                        );
-
-                                        if (confirm == true) {
-                                          final user =
-                                              FirebaseAuth.instance.currentUser;
-                                          if (user != null) {
-                                            await _noteService.moveToTrash(
-                                              user.uid,
-                                              note.id,
-                                            );
-                                            _loadNotes();
-                                          }
-                                        }
-                                      },
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
-                  ),
-                ],
-              ),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
       floatingActionButton: Container(
         margin: const EdgeInsets.all(8),
         decoration: const BoxDecoration(
@@ -360,7 +345,7 @@ class _HomeScreenState extends State<HomeScreen> {
           boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
         ),
         child: FloatingActionButton(
-          backgroundColor: const Color(0xFFD8CFFF),
+          backgroundColor: colorScheme.secondary,
           onPressed: () async {
             await Navigator.push(
               context,
@@ -368,7 +353,7 @@ class _HomeScreenState extends State<HomeScreen> {
             );
             _loadNotes();
           },
-          child: const Icon(Icons.add, color: Colors.black),
+          child: const Icon(Icons.add, color: Colors.white),
           tooltip: 'Tambah Catatan',
         ),
       ),
@@ -381,6 +366,7 @@ class _HomeScreenState extends State<HomeScreen> {
     required Color color,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       splashColor: color.withOpacity(0.1),
@@ -393,11 +379,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: 16),
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.black87,
-                fontWeight: FontWeight.w500,
-              ),
+              style:
+                  theme.textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w500),
             ),
           ],
         ),
