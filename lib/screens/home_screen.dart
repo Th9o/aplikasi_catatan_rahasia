@@ -6,6 +6,7 @@ import '../models/note_model.dart';
 import 'login_screen.dart';
 import 'note_editor_page.dart';
 import 'settings_screen.dart';
+import '../screens/edit_profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Note> _filteredNotes = [];
   String _userName = 'Pengguna';
   String _userEmail = 'Email tidak tersedia';
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   Future<void> _loadNotes() async {
     try {
@@ -40,7 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final notes = await _noteService.getDecryptedNotes(user.uid);
       setState(() {
         _notes = notes;
-        _filteredNotes = notes; // Awalnya tampilkan semua
+        _filteredNotes = notes;
         _isLoading = false;
       });
     } catch (e) {
@@ -91,45 +92,59 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF6A5AE0), Color(0xFF8E80F9)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+            GestureDetector(
+              onTap: () async {
+                Navigator.pop(context);
+                final updated = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const EditProfileScreen()),
+                );
+                if (updated == true) {
+                  setState(() {
+                    _userName = _auth.currentUser?.displayName ?? 'Pengguna';
+                  });
+                }
+              },
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF6A5AE0), Color(0xFF8E80F9)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                 ),
-              ),
-              padding: const EdgeInsets.only(top: 48, bottom: 24, left: 20, right: 20),
-              child: Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.white,
-                    child: Icon(Icons.person, size: 30, color: Color(0xFF6A5AE0)),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _userName,
-                          style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _userEmail,
-                          style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                                color: Colors.white70,
-                              ),
-                        ),
-                      ],
+                padding: const EdgeInsets.only(top: 48, bottom: 24, left: 20, right: 20),
+                child: Row(
+                  children: [
+                    const CircleAvatar(
+                      radius: 30,
+                      backgroundColor: Colors.white,
+                      child: Icon(Icons.person, size: 30, color: Color(0xFF6A5AE0)),
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _userName,
+                            style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _userEmail,
+                            style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                                  color: Colors.white70,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -150,7 +165,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: 'Pengaturan',
               color: Colors.teal,
               onTap: () {
-                Navigator.pop(context); // Tutup drawer dulu
+                Navigator.pop(context);
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const SettingsScreen()),
