@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../services/note_service.dart';
 import '../models/note_model.dart';
@@ -14,19 +15,26 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _noteService = NoteService();
+  final _auth = FirebaseAuth.instance;
+
   bool _isLoading = true;
   List<Note> _notes = [];
+  String _userName = 'Pengguna';
+  String _userEmail = 'Email tidak tersedia';
 
   Future<void> _loadNotes() async {
     try {
       setState(() => _isLoading = true);
-      final userId = await AuthService().getCurrentUserId();
+      final user = _auth.currentUser;
 
-      if (userId == null) {
-        throw Exception('User ID tidak ditemukan.');
-      }
+      if (user == null) throw Exception('User tidak ditemukan.');
 
-      final notes = await _noteService.getDecryptedNotes(userId);
+      setState(() {
+        _userName = user.displayName ?? 'Pengguna';
+        _userEmail = user.email ?? 'Email tidak tersedia';
+      });
+
+      final notes = await _noteService.getDecryptedNotes(user.uid);
       setState(() {
         _notes = notes;
         _isLoading = false;
@@ -35,9 +43,9 @@ class _HomeScreenState extends State<HomeScreen> {
       debugPrint('Gagal memuat catatan: $e');
       setState(() => _isLoading = false);
       if (context.mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Terjadi kesalahan: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Terjadi kesalahan: $e')),
+        );
       }
     }
   }
@@ -58,125 +66,147 @@ class _HomeScreenState extends State<HomeScreen> {
         foregroundColor: Colors.white,
       ),
       drawer: Drawer(
+        backgroundColor: Colors.white,
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            DrawerHeader(
-              decoration: const BoxDecoration(color: Color(0xFF6A5AE0)),
-              child: Align(
-                alignment: Alignment.bottomLeft,
-                child: Text(
-                  'Menu',
-                  style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF6A5AE0), Color(0xFF8E80F9)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
               ),
+              padding: const EdgeInsets.only(top: 48, bottom: 24, left: 20, right: 20),
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 30,
+                    backgroundColor: Colors.white,
+                    child: Icon(Icons.person, size: 30, color: Color(0xFF6A5AE0)),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _userName,
+                          style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          _userEmail,
+                          style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                                color: Colors.white70,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-            ListTile(
-              leading: const Icon(Icons.notes),
-              title: const Text('Semua Catatan'),
+            const SizedBox(height: 16),
+            _buildDrawerItem(
+              icon: Icons.note_alt_outlined,
+              title: 'Semua Catatan',
+              color: const Color(0xFF6A5AE0),
               onTap: () => Navigator.pop(context),
             ),
-            ListTile(
-              leading: const Icon(Icons.delete),
-              title: const Text('Sampah'),
+            _buildDrawerItem(
+              icon: Icons.delete_sweep_outlined,
+              title: 'Sampah',
+              color: Colors.redAccent,
               onTap: () => Navigator.pop(context),
             ),
             const Spacer(),
+            const Divider(height: 1),
             Padding(
-              padding: const EdgeInsets.only(bottom: 10, right: 16),
-              child: Align(
-                alignment: Alignment.bottomRight,
-                child: TextButton.icon(
-                  onPressed: () async {
-                    await AuthService().logout();
-                    if (context.mounted) {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.logout, color: Colors.red),
-                  label: const Text(
-                    'Logout',
-                    style: TextStyle(color: Colors.red),
-                  ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.red,
+                  side: const BorderSide(color: Colors.red),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
+                onPressed: () async {
+                  await AuthService().logout();
+                  if (context.mounted) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.logout),
+                label: const Text('Logout'),
               ),
             ),
           ],
         ),
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _notes.isEmpty
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _notes.isEmpty
               ? const Center(
-                child: Text(
-                  "Belum ada catatan.",
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
-                ),
-              )
+                  child: Text(
+                    "Belum ada catatan.",
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                )
               : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: _notes.length,
-                itemBuilder: (context, index) {
-                  final note = _notes[index];
-                  final title =
-                      note.decryptedContent?.split('\n').first ?? 'Tanpa Judul';
-                  final body =
-                      note.decryptedContent?.split('\n').skip(1).join('\n') ??
-                      '';
+                  padding: const EdgeInsets.all(16),
+                  itemCount: _notes.length,
+                  itemBuilder: (context, index) {
+                    final note = _notes[index];
+                    final title = note.decryptedContent?.split('\n').first ?? 'Tanpa Judul';
+                    final body = note.decryptedContent?.split('\n').skip(1).join('\n') ?? '';
 
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    elevation: 3,
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      title: Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                      elevation: 3,
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        title: Text(
+                          title,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
-                      ),
-                      subtitle: Text(
-                        body,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black54,
+                        subtitle: Text(
+                          body,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 14, color: Colors.black54),
                         ),
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => NoteEditorPage(
+                                existingNoteId: note.id,
+                                existingNoteContent: note.decryptedContent,
+                              ),
+                            ),
+                          );
+                          _loadNotes();
+                        },
                       ),
-                      onTap: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (_) => NoteEditorPage(
-                                  existingNoteId: note.id,
-                                  existingNoteContent: note.decryptedContent,
-                                ),
-                          ),
-                        );
-                        _loadNotes();
-                      },
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
       floatingActionButton: Container(
         margin: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           shape: BoxShape.circle,
           boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
         ),
@@ -191,6 +221,36 @@ class _HomeScreenState extends State<HomeScreen> {
           },
           child: const Icon(Icons.add, color: Colors.black),
           tooltip: 'Tambah Catatan',
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem({
+    required IconData icon,
+    required String title,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      splashColor: color.withOpacity(0.1),
+      highlightColor: Colors.transparent,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, color: color),
+            const SizedBox(width: 16),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );
