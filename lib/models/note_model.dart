@@ -7,6 +7,7 @@ class Note {
     required this.id,
     required this.encryptedContent,
     this.decryptedContent,
+    required isDeleted,
   });
 
   // Parse dari Firebase
@@ -14,9 +15,12 @@ class Note {
     return Note(
       id: id,
       encryptedContent: data['encryptedContent'] ?? '',
-      decryptedContent: null, // Default null, nanti didekripsi terpisah
+      decryptedContent: null,
+      isDeleted: null, // Default null, nanti didekripsi terpisah
     );
   }
+
+  Future<void>? get isDeleted => null;
 
   // Untuk disimpan ke Firebase (opsional, jika ingin dipakai)
   Map<String, dynamic> toMap(String iv) {
