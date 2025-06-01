@@ -5,6 +5,7 @@ import '../services/note_service.dart';
 import '../models/note_model.dart';
 import 'login_screen.dart';
 import 'note_editor_page.dart';
+import 'settings_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -123,6 +124,18 @@ class _HomeScreenState extends State<HomeScreen> {
               title: 'Sampah',
               color: Colors.redAccent,
               onTap: () => Navigator.pop(context),
+            ),
+            _buildDrawerItem(
+              icon: Icons.settings_outlined,
+              title: 'Pengaturan',
+              color: Colors.teal,
+              onTap: () {
+                Navigator.pop(context); // Tutup drawer dulu
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                );
+              },
             ),
             const Spacer(),
             const Divider(height: 1),
