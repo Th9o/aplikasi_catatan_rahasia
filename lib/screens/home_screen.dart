@@ -6,7 +6,6 @@ import '../models/note_model.dart';
 import 'login_screen.dart';
 import 'note_editor_page.dart';
 import 'settings_screen.dart';
-import 'recycle_bin_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,7 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Note> _filteredNotes = [];
   String _userName = 'Pengguna';
   String _userEmail = 'Email tidak tersedia';
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
 
   Future<void> _loadNotes() async {
     try {
