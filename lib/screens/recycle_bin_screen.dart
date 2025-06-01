@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import '../models/note_model.dart';
 import '../services/note_service.dart';
 
@@ -29,9 +30,9 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
       } catch (e) {
         debugPrint("❌ Gagal memuat catatan sampah: $e");
         if (context.mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text("Terjadi kesalahan: $e")));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Terjadi kesalahan: $e")),
+          );
         }
       }
     }
@@ -56,24 +57,23 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
     if (user != null) {
       final confirm = await showDialog<bool>(
         context: context,
-        builder:
-            (_) => AlertDialog(
-              title: const Text("Hapus Permanen"),
-              content: const Text("Catatan akan dihapus selamanya. Lanjutkan?"),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text("Batal"),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text(
-                    "Hapus",
-                    style: TextStyle(color: Colors.red),
-                  ),
-                ),
-              ],
+        builder: (_) => AlertDialog(
+          title: const Text("Hapus Permanen"),
+          content: const Text("Catatan akan dihapus selamanya. Lanjutkan?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Batal"),
             ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text(
+                "Hapus",
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        ),
       );
 
       if (confirm == true) {
@@ -96,71 +96,86 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
+
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Sampah'),
-        backgroundColor: const Color(0xFF6A5AE0),
-        foregroundColor: Colors.white,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
       ),
-      body:
-          _isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : _deletedNotes.isEmpty
-              ? const Center(child: Text("Tidak ada catatan di sampah."))
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _deletedNotes.isEmpty
+              ? Center(
+                  child: Text(
+                    "Tidak ada catatan di sampah.",
+                    style: textTheme.bodyLarge?.copyWith(color: Colors.grey),
+                  ),
+                )
               : ListView.builder(
-                itemCount: _deletedNotes.length,
-                padding: const EdgeInsets.all(16),
-                itemBuilder: (context, index) {
-                  final note = _deletedNotes[index];
-                  final title =
-                      note.decryptedContent?.split('\n').first ?? 'Tanpa Judul';
-                  final body =
-                      note.decryptedContent?.split('\n').skip(1).join('\n') ??
-                      '';
+                  itemCount: _deletedNotes.length,
+                  padding: const EdgeInsets.all(16),
+                  itemBuilder: (context, index) {
+                    final note = _deletedNotes[index];
+                    final title =
+                        note.decryptedContent?.split('\n').first ?? 'Tanpa Judul';
+                    final body =
+                        note.decryptedContent?.split('\n').skip(1).join('\n') ??
+                            '';
 
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    elevation: 2,
-                    child: ListTile(
-                      title: Text(
-                        title,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      subtitle: Text(
-                        body,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: PopupMenuButton<String>(
-                        onSelected: (value) {
-                          if (value == 'restore') {
-                            _restoreNote(note);
-                          } else if (value == 'delete') {
-                            _deleteNotePermanently(note);
-                          }
-                        },
-                        itemBuilder:
-                            (_) => [
-                              const PopupMenuItem(
-                                value: 'restore',
-                                child: Text('Pulihkan'),
+                      elevation: 2,
+                      color: theme.cardColor,
+                      child: ListTile(
+                        title: Text(
+                          title,
+                          style: textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        subtitle: Text(
+                          body,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.bodyMedium,
+                        ),
+                        trailing: PopupMenuButton<String>(
+                          icon: Icon(Icons.more_vert,
+                              color: theme.iconTheme.color),
+                          color: theme.cardColor,
+                          onSelected: (value) {
+                            if (value == 'restore') {
+                              _restoreNote(note);
+                            } else if (value == 'delete') {
+                              _deleteNotePermanently(note);
+                            }
+                          },
+                          itemBuilder: (_) => [
+                            const PopupMenuItem(
+                              value: 'restore',
+                              child: Text('Pulihkan'),
+                            ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Text(
+                                'Hapus Permanen',
+                                style: TextStyle(color: Colors.red),
                               ),
-                              const PopupMenuItem(
-                                value: 'delete',
-                                child: Text(
-                                  'Hapus Permanen',
-                                  style: TextStyle(color: Colors.red),
-                                ),
-                              ),
-                            ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
     );
   }
 }
