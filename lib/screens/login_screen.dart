@@ -62,6 +62,31 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  void handleGoogleLogin() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final user = await auth.signInWithGoogle();
+      if (user != null && mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = "Login Google gagal: ${e.toString()}";
+      });
+    }
+
+    setState(() {
+      isLoading = false;
+    });
+  }
+
   void clearInputs() {
     emailController.clear();
     passwordController.clear();
@@ -165,6 +190,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                 ),
               ),
+              const SizedBox(height: 20),
+              GestureDetector(
+                onTap: isLoading ? null : handleGoogleLogin,
+                child: Image.asset('assets/google_signin_logo.png', height: 40),
+              ),
+
               const SizedBox(height: 24),
               TextButton(
                 onPressed: () async {

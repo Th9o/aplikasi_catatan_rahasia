@@ -41,7 +41,7 @@ dependencies:
   local_auth: ^2.1.7
   shared_preferences: ^2.2.2
   provider: ^6.0.0
-
+  google_sign_in: ^6.1.5
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
 
@@ -63,7 +63,8 @@ dev_dependencies:
 flutter:
   assets:
     - assets/buku_icon.jpg
-
+    - assets/google_signin_logo.png
+    - assets/google_signup_logo.png
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

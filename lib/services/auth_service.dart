@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService {
   final _auth = FirebaseAuth.instance;
@@ -19,19 +20,31 @@ class AuthService {
     return result.user;
   }
 
-  Future<void> logout() async {
-    await _auth.signOut();
-  }
-
   Future<void> resetPassword(String email) async {
     await _auth.sendPasswordResetEmail(email: email);
   }
 
-  Stream<User?> get userStream => _auth.authStateChanges();
+  Future<void> logout() async {
+    await _auth.signOut();
+    await GoogleSignIn().signOut(); // Tambahan agar logout Google juga
+  }
 
-  // ✅ Fungsi yang sebelumnya kosong — sekarang sudah berfungsi
+  Future<User?> signInWithGoogle() async {
+    final googleUser = await GoogleSignIn().signIn();
+    if (googleUser == null) return null;
+
+    final googleAuth = await googleUser.authentication;
+
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+
+    final result = await _auth.signInWithCredential(credential);
+    return result.user;
+  }
+
   Future<String?> getCurrentUserId() async {
-    final user = _auth.currentUser;
-    return user?.uid;
+    return FirebaseAuth.instance.currentUser?.uid;
   }
 }
