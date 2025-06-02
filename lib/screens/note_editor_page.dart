@@ -142,7 +142,7 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
           keyboardType: TextInputType.multiline,
           decoration: const InputDecoration(
             hintText: 'Tulis catatan...',
-            border: InputBorder.none, // Tidak ada border garis
+            border: InputBorder.none,
           ),
           style: theme.textTheme.bodyLarge,
         ),
@@ -165,7 +165,12 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
             Expanded(
               child: TextField(
                 controller: item.controller,
+                enabled: !item.checked, // 🔒 disable editing saat dicentang
                 decoration: const InputDecoration.collapsed(hintText: 'Tulis item...'),
+                style: TextStyle(
+                  decoration: item.checked ? TextDecoration.lineThrough : TextDecoration.none,
+                  color: item.checked ? Colors.grey : null,
+                ),
               ),
             ),
             IconButton(
@@ -183,7 +188,6 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
     );
   }
 }
-
 
   @override
   Widget build(BuildContext context) {
