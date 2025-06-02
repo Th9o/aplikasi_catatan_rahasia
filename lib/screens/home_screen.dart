@@ -9,7 +9,7 @@ import 'login_screen.dart';
 import 'note_editor_page.dart';
 import 'settings_screen.dart';
 import 'recycle_bin_screen.dart';
-import 'edit_profile_screen.dart'; // Tambahan
+import 'edit_profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -98,7 +98,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Bagian Header - Klik untuk Edit Profile
             InkWell(
               onTap: () {
                 Navigator.pop(context);
@@ -107,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   MaterialPageRoute(
                     builder: (_) => const EditProfileScreen(),
                   ),
-                );
+                ).then((_) => _loadNotes());
               },
               child: Container(
                 decoration: BoxDecoration(
@@ -120,15 +119,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     end: Alignment.bottomRight,
                   ),
                 ),
-                padding: const EdgeInsets.only(
-                    top: 48, bottom: 24, left: 20, right: 20),
+                padding:
+                    const EdgeInsets.only(top: 48, bottom: 24, left: 20, right: 20),
                 child: Row(
                   children: [
                     CircleAvatar(
                       radius: 30,
                       backgroundColor: Colors.white,
-                      child: Icon(Icons.person,
-                          size: 30, color: colorScheme.primary),
+                      child:
+                          Icon(Icons.person, size: 30, color: colorScheme.primary),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -220,123 +219,126 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Cari catatan...',
-                      prefixIcon: const Icon(Icons.search),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
+          : RefreshIndicator(
+              onRefresh: _loadNotes,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Cari catatan...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        filled: true,
+                        fillColor: theme.cardColor,
                       ),
-                      filled: true,
-                      fillColor: theme.cardColor,
+                      style: theme.textTheme.bodyMedium,
                     ),
-                    style: theme.textTheme.bodyMedium,
                   ),
-                ),
-                Expanded(
-                  child: _filteredNotes.isEmpty
-                      ? Center(
-                          child: Text(
-                            "Catatan tidak ditemukan.",
-                            style: theme.textTheme.bodyLarge!
-                                .copyWith(color: Colors.grey),
-                          ),
-                        )
-                      : ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: _filteredNotes.length,
-                          itemBuilder: (context, index) {
-                            final note = _filteredNotes[index];
-                            final title = note.decryptedContent
-                                    ?.split('\n')
-                                    .first ??
-                                'Tanpa Judul';
-                            final body = note.decryptedContent
-                                    ?.split('\n')
-                                    .skip(1)
-                                    .join('\n') ??
-                                '';
+                  Expanded(
+                    child: _filteredNotes.isEmpty
+                        ? Center(
+                            child: Text(
+                              "Catatan tidak ditemukan.",
+                              style: theme.textTheme.bodyLarge!
+                                  .copyWith(color: Colors.grey),
+                            ),
+                          )
+                        : ListView.builder(
+                            padding:
+                                const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: _filteredNotes.length,
+                            itemBuilder: (context, index) {
+                              final note = _filteredNotes[index];
+                              final title =
+                                  note.decryptedContent?.split('\n').first ??
+                                      'Tanpa Judul';
+                              final body = note.decryptedContent
+                                      ?.split('\n')
+                                      .skip(1)
+                                      .join('\n') ??
+                                  '';
 
-                            return Card(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              color: theme.cardColor,
-                              elevation: 3,
-                              child: ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 12),
-                                title: Text(
-                                  title,
-                                  style: theme.textTheme.titleMedium,
+                              return Card(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
                                 ),
-                                subtitle: Text(
-                                  body,
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.bodySmall,
-                                ),
-                                onTap: () async {
-                                  await Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => NoteEditorPage(
-                                        existingNoteId: note.id,
-                                        existingNoteContent:
-                                            note.decryptedContent,
-                                      ),
-                                    ),
-                                  );
-                                  _loadNotes();
-                                },
-                                trailing: IconButton(
-                                  icon: const Icon(Icons.delete,
-                                      color: Colors.redAccent),
-                                  onPressed: () async {
-                                    final confirm = await showDialog<bool>(
-                                      context: context,
-                                      builder: (_) => AlertDialog(
-                                        title: const Text('Hapus Catatan'),
-                                        content: const Text(
-                                            'Yakin ingin memindahkan catatan ke Sampah?'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context, false),
-                                            child: const Text('Batal'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () =>
-                                                Navigator.pop(context, true),
-                                            child: const Text('Hapus'),
-                                          ),
-                                        ],
+                                color: theme.cardColor,
+                                elevation: 3,
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 12),
+                                  title: Text(
+                                    title,
+                                    style: theme.textTheme.titleMedium,
+                                  ),
+                                  subtitle: Text(
+                                    body,
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.bodySmall,
+                                  ),
+                                  onTap: () async {
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => NoteEditorPage(
+                                          existingNoteId: note.id,
+                                          existingNoteContent:
+                                              note.decryptedContent,
+                                        ),
                                       ),
                                     );
-
-                                    if (confirm == true) {
-                                      final user = FirebaseAuth
-                                          .instance.currentUser;
-                                      if (user != null) {
-                                        await _noteService.moveToTrash(
-                                            user.uid, note.id);
-                                        _loadNotes();
-                                      }
-                                    }
+                                    _loadNotes();
                                   },
+                                  trailing: IconButton(
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.redAccent),
+                                    onPressed: () async {
+                                      final confirm = await showDialog<bool>(
+                                        context: context,
+                                        builder: (_) => AlertDialog(
+                                          title: const Text('Hapus Catatan'),
+                                          content: const Text(
+                                              'Yakin ingin memindahkan catatan ke Sampah?'),
+                                          actions: [
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, false),
+                                              child: const Text('Batal'),
+                                            ),
+                                            TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context, true),
+                                              child: const Text('Hapus'),
+                                            ),
+                                          ],
+                                        ),
+                                      );
+
+                                      if (confirm == true) {
+                                        final user =
+                                            FirebaseAuth.instance.currentUser;
+                                        if (user != null) {
+                                          await _noteService.moveToTrash(
+                                              user.uid, note.id);
+                                          _loadNotes();
+                                        }
+                                      }
+                                    },
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-              ],
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
             ),
       floatingActionButton: Container(
         margin: const EdgeInsets.all(8),
@@ -379,8 +381,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: 16),
             Text(
               title,
-              style:
-                  theme.textTheme.bodyLarge!.copyWith(fontWeight: FontWeight.w500),
+              style: theme.textTheme.bodyLarge!
+                  .copyWith(fontWeight: FontWeight.w500),
             ),
           ],
         ),
