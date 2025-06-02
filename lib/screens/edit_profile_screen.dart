@@ -1,6 +1,6 @@
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'home_screen.dart'; // Pastikan path ini sesuai dengan struktur proyekmu
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -11,20 +11,42 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final _nameController = TextEditingController();
-  final user = FirebaseAuth.instance.currentUser;
+  final User? user = FirebaseAuth.instance.currentUser;
 
   @override
   void initState() {
     super.initState();
-    _nameController.text = user?.displayName ?? '';
+    if (user != null) {
+      _nameController.text = user!.displayName ?? '';
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
   }
 
   Future<void> _saveProfile() async {
+    final newName = _nameController.text.trim();
+    if (newName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nama tidak boleh kosong')),
+      );
+      return;
+    }
+
     try {
-      await user?.updateDisplayName(_nameController.text);
-      await user?.reload();
-      if (context.mounted) {
-        Navigator.pop(context, true);
+      if (user != null) {
+        await user!.updateDisplayName(newName);
+        await user!.reload();
+
+        if (context.mounted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const HomeScreen()),
+          );
+        }
       }
     } catch (e) {
       if (context.mounted) {
@@ -79,7 +101,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               ),
               child: Text(
                 'Simpan',
-                style: theme.textTheme.labelLarge?.copyWith(color: colorScheme.onPrimary),
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: colorScheme.onPrimary,
+                ),
               ),
             ),
           ],
