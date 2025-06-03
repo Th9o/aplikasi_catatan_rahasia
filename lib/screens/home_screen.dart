@@ -86,6 +86,18 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
+  void _showSnackBar(String message) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -111,7 +123,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   MaterialPageRoute(
                     builder: (_) => const EditProfileScreen(),
                   ),
-                ).then((_) => _loadNotes());
+                ).then((result) {
+                  if (result == true) {
+                    _showSnackBar('Profil berhasil diperbarui');
+                    _loadNotes();
+                  }
+                });
               },
               child: Container(
                 decoration: BoxDecoration(
@@ -219,14 +236,35 @@ class _HomeScreenState extends State<HomeScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                 ),
                 onPressed: () async {
-                  await AuthService().logout();
-                  if (context.mounted) {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    );
+                  final shouldLogout = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Konfirmasi Logout'),
+                      content: const Text('Apakah Anda yakin ingin logout?'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Batal'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Logout'),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (shouldLogout == true) {
+                    await AuthService().logout();
+                    if (context.mounted) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      );
+                    }
                   }
                 },
+
                 icon: const Icon(Icons.logout),
                 label: const Text('Logout'),
               ),
@@ -316,7 +354,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                             note.isFavorite = newFavoriteStatus;
                                           });
                                           await _noteService.updateFavorite(user.uid, note.id, newFavoriteStatus);
-                                          _loadNotes();
+                                            _showSnackBar(newFavoriteStatus
+                                              ? 'Catatan ditambahkan ke Favorit'
+                                              : 'Catatan dihapus dari Favorit');
+                                            _loadNotes();
+
                                           break;
 
                                         case 'delete_note':
@@ -338,9 +380,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                             ),
                                           );
                                           if (confirm == true) {
-                                            await _noteService.moveToTrash(user.uid, note.id);
-                                            _loadNotes();
-                                          }
+                                              await _noteService.moveToTrash(user.uid, note.id);
+                                              _showSnackBar('Catatan berhasil dihapus');
+                                              _loadNotes();
+                                            }
                                           break;
                                       }
                                     },
@@ -388,14 +431,17 @@ class _HomeScreenState extends State<HomeScreen> {
         child: FloatingActionButton(
           backgroundColor: colorScheme.secondary,
           onPressed: () async {
-            await Navigator.push(
+            final result = await Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const NoteEditorPage()),
             );
+            if (result != null) {
+              _showSnackBar('Catatan berhasil ditambahkan');
+            }
             _loadNotes();
           },
-          child: const Icon(Icons.add, color: Colors.white),
           tooltip: 'Tambah Catatan',
+          child: const Icon(Icons.add, color: Colors.white),
         ),
       ),
     );

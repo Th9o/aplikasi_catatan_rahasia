@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'home_screen.dart'; // Pastikan path ini sesuai dengan struktur proyekmu
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -41,11 +40,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         await user!.updateDisplayName(newName);
         await user!.reload();
 
-        if (context.mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const HomeScreen()),
-          );
+        if (mounted) {
+          Navigator.pop(context, true); // ✅ Kembali dan kirim sinyal berhasil
         }
       }
     } catch (e) {

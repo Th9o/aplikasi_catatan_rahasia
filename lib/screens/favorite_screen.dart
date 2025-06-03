@@ -44,27 +44,40 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
   }
 
   Future<void> _toggleFavorite(Note note) async {
-    final user = _auth.currentUser;
-    if (user == null) return;
+  final user = _auth.currentUser;
+  if (user == null) return;
 
-    final newFavoriteStatus = !note.isFavorite;
+  final newFavoriteStatus = !note.isFavorite;
 
-    setState(() {
-      note.isFavorite = newFavoriteStatus;
-    });
+  setState(() {
+    note.isFavorite = newFavoriteStatus;
+  });
 
-    try {
-      await _noteService.updateFavorite(user.uid, note.id, newFavoriteStatus);
-      await _loadFavoriteNotes();
-    } catch (e) {
-      debugPrint('Gagal update favorit: $e');
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal update favorit: $e')),
-        );
-      }
+  try {
+    await _noteService.updateFavorite(user.uid, note.id, newFavoriteStatus);
+    await _loadFavoriteNotes();
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            newFavoriteStatus
+                ? 'Catatan ditambahkan ke Favorit'
+                : 'Catatan dihapus dari Favorit',
+          ),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  } catch (e) {
+    debugPrint('Gagal update favorit: $e');
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal update favorit: $e')),
+      );
     }
   }
+}
 
   @override
   void initState() {

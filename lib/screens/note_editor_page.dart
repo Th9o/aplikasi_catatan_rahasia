@@ -95,7 +95,9 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         await _noteService.saveNote(userId, fullNote);
       }
 
-      if (context.mounted) Navigator.pop(context);
+      if (context.mounted) {
+        Navigator.pop(context, true); // Memberi tahu HomeScreen untuk menampilkan notifikasi
+      }
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -108,86 +110,84 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
   void _addChecklistItem() {
     setState(() {
       _checklistItems.add(
-        _ChecklistItem(
-          controller: TextEditingController(),
-          checked: false,
-        ),
+        _ChecklistItem(controller: TextEditingController(), checked: false),
       );
     });
   }
 
   Widget _buildNoteBody() {
-  final theme = Theme.of(context);
-  if (_noteType == NoteType.plainText) {
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: theme.colorScheme.primary.withOpacity(0.1),
-              blurRadius: 12,
-              spreadRadius: 2,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.all(16),
-        child: TextField(
-          controller: _plainTextController,
-          maxLines: null,
-          expands: true,
-          keyboardType: TextInputType.multiline,
-          decoration: const InputDecoration(
-            hintText: 'Tulis catatan...',
-            border: InputBorder.none,
+    final theme = Theme.of(context);
+    if (_noteType == NoteType.plainText) {
+      return Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: theme.colorScheme.primary.withOpacity(0.1),
+                blurRadius: 12,
+                spreadRadius: 2,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-          style: theme.textTheme.bodyLarge,
-        ),
-      ),
-    );
-  } else {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: _checklistItems.length,
-      itemBuilder: (context, index) {
-        final item = _checklistItems[index];
-        return Row(
-          children: [
-            Checkbox(
-              value: item.checked,
-              onChanged: (value) {
-                setState(() => item.checked = value ?? false);
-              },
+          padding: const EdgeInsets.all(16),
+          child: TextField(
+            controller: _plainTextController,
+            maxLines: null,
+            expands: true,
+            keyboardType: TextInputType.multiline,
+            decoration: const InputDecoration(
+              hintText: 'Tulis catatan...',
+              border: InputBorder.none,
             ),
-            Expanded(
-              child: TextField(
-                controller: item.controller,
-                enabled: !item.checked, // 🔒 disable editing saat dicentang
-                decoration: const InputDecoration.collapsed(hintText: 'Tulis item...'),
-                style: TextStyle(
-                  decoration: item.checked ? TextDecoration.lineThrough : TextDecoration.none,
-                  color: item.checked ? Colors.grey : null,
+            style: theme.textTheme.bodyLarge,
+          ),
+        ),
+      );
+    } else {
+      return ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: _checklistItems.length,
+        itemBuilder: (context, index) {
+          final item = _checklistItems[index];
+          return Row(
+            children: [
+              Checkbox(
+                value: item.checked,
+                onChanged: (value) {
+                  setState(() => item.checked = value ?? false);
+                },
+              ),
+              Expanded(
+                child: TextField(
+                  controller: item.controller,
+                  enabled: !item.checked,
+                  decoration: const InputDecoration.collapsed(hintText: 'Tulis item...'),
+                  style: TextStyle(
+                    decoration:
+                        item.checked ? TextDecoration.lineThrough : TextDecoration.none,
+                    color: item.checked ? Colors.grey : null,
+                  ),
                 ),
               ),
-            ),
-            IconButton(
-              icon: const Icon(Icons.clear),
-              onPressed: () {
-                setState(() {
-                  item.controller.dispose();
-                  _checklistItems.removeAt(index);
-                });
-              },
-            ),
-          ],
-        );
-      },
-    );
+              IconButton(
+                icon: const Icon(Icons.clear),
+                onPressed: () {
+                  setState(() {
+                    item.controller.dispose();
+                    _checklistItems.removeAt(index);
+                  });
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -202,32 +202,31 @@ class _NoteEditorPageState extends State<NoteEditorPage> {
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
         actions: [
-  PopupMenuButton<NoteType>(
-    icon: const Icon(Icons.more_vert),
-    onSelected: (value) {
-      setState(() {
-        _noteType = value;
-      });
-    },
-    itemBuilder: (context) => [
-      PopupMenuItem(
-        value: NoteType.plainText,
-        child: const Text('Catatan Biasa'),
-      ),
-      PopupMenuItem(
-        value: NoteType.checklist,
-        child: const Text('Checklist'),
-      ),
-    ],
-  ),
-  if (_noteType == NoteType.checklist)
-    IconButton(
-      icon: const Icon(Icons.playlist_add_check),
-      tooltip: 'Tambah Checklist',
-      onPressed: _addChecklistItem,
-    ),
-],
-
+          PopupMenuButton<NoteType>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) {
+              setState(() {
+                _noteType = value;
+              });
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: NoteType.plainText,
+                child: Text('Catatan Biasa'),
+              ),
+              const PopupMenuItem(
+                value: NoteType.checklist,
+                child: Text('Checklist'),
+              ),
+            ],
+          ),
+          if (_noteType == NoteType.checklist)
+            IconButton(
+              icon: const Icon(Icons.playlist_add_check),
+              tooltip: 'Tambah Checklist',
+              onPressed: _addChecklistItem,
+            ),
+        ],
       ),
       body: SafeArea(
         child: Column(
