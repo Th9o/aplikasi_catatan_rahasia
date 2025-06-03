@@ -33,6 +33,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       await auth.resetPassword(email);
       setState(() {
         message = "Link reset password telah dikirim ke email.";
+        emailController.clear();
       });
     } catch (e) {
       final err = e.toString();
