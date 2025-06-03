@@ -3,35 +3,44 @@ class Note {
   final String encryptedContent;
   final String? decryptedContent; // Bisa null kalau belum didekripsi
   bool isFavorite;
+  DateTime? deletedAt; // waktu catatan masuk sampah
 
   Note({
     required this.id,
     required this.encryptedContent,
     this.decryptedContent,
-    required isDeleted,
+    this.deletedAt,
     this.isFavorite = false,
   });
 
-  // Parse dari Firebase
+  // Properti getter untuk mengecek apakah catatan dihapus (deletedAt != null)
+  bool get isDeleted => deletedAt != null;
+
+  // Parse dari Firebase (Map) jadi Note object
   factory Note.fromMap(String id, Map<String, dynamic> data) {
     return Note(
       id: id,
       encryptedContent: data['encryptedContent'] ?? '',
-      decryptedContent: null,
-      isDeleted: null, // Default null, nanti didekripsi terpisah
+      decryptedContent: null, // biasanya diisi saat dekripsi terpisah
       isFavorite: data['isFavorite'] ?? false,
+      deletedAt: data['deletedAt'] != null
+          ? DateTime.tryParse(data['deletedAt'])
+          : null,
     );
   }
 
-  Future<void>? get isDeleted => null;
-
-  // Untuk disimpan ke Firebase (opsional, jika ingin dipakai)
-  Map<String, dynamic> toMap(String iv) {
-    return {
+  // Convert Note object ke Map untuk disimpan ke Firebase
+  Map<String, dynamic> toMap({required String iv}) {
+    final map = {
       'encryptedContent': encryptedContent,
       'iv': iv,
-      'createdAt': DateTime.now().toIso8601String(),
       'isFavorite': isFavorite,
     };
+
+    if (deletedAt != null) {
+      map['deletedAt'] = deletedAt!.toIso8601String();
+    }
+
+    return map;
   }
 }

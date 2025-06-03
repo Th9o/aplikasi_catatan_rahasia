@@ -11,7 +11,7 @@ class NoteService {
     final newNote = {
       'encryptedContent': encrypted['content'],
       'iv': encrypted['iv'],
-      'isDeleted': false,
+      'deletedAt': null,
       'isFavorite': false,
       'createdAt': DateTime.now().toIso8601String(),
     };
@@ -52,7 +52,7 @@ class NoteService {
         .doc(userId)
         .collection('notes')
         .doc(noteId)
-        .update({'isDeleted': true});
+        .update({'deletedAt': DateTime.now().toIso8601String()});
   }
 
   Future<void> restoreFromTrash(String userId, String noteId) async {
@@ -61,7 +61,7 @@ class NoteService {
         .doc(userId)
         .collection('notes')
         .doc(noteId)
-        .update({'isDeleted': false});
+        .update({'deletedAt': null});
   }
 
   Future<void> updateFavorite(String userId, String noteId, bool isFavorite) async {
@@ -74,21 +74,21 @@ class NoteService {
   }
 
   Future<List<Note>> getDecryptedNotes(String userId) async {
-    final query =
-        await _db
-            .collection('users')
-            .doc(userId)
-            .collection('notes')
-            .orderBy('createdAt', descending: true)
-            .get();
+    final query = await _db
+        .collection('users')
+        .doc(userId)
+        .collection('notes')
+        .orderBy('createdAt', descending: true)
+        .get();
 
     final List<Note> decryptedNotes = [];
 
     for (var doc in query.docs) {
       final data = doc.data();
-      final isDeleted = data['isDeleted'] ?? false;
+      final deletedAtStr = data['deletedAt'];
+      final deletedAt = deletedAtStr != null ? DateTime.tryParse(deletedAtStr) : null;
 
-      if (isDeleted == true) continue; // Hanya tampilkan yang aktif
+      if (deletedAt != null) continue; // Hanya catatan aktif (tidak dihapus)
 
       final encrypted = data['encryptedContent'];
       final iv = data['iv'];
@@ -101,9 +101,9 @@ class NoteService {
             id: doc.id,
             encryptedContent: encrypted,
             decryptedContent: decrypted,
-            isDeleted: isDeleted,
+            deletedAt: deletedAt,
             isFavorite: isFavorite,
-          )
+          ),
         );
       } catch (e) {
         print('❌ Gagal dekripsi catatan ${doc.id}: $e');
@@ -114,21 +114,21 @@ class NoteService {
   }
 
   Future<List<Note>> getDeletedNotes(String userId) async {
-    final query =
-        await _db
-            .collection('users')
-            .doc(userId)
-            .collection('notes')
-            .orderBy('createdAt', descending: true)
-            .get();
+    final query = await _db
+        .collection('users')
+        .doc(userId)
+        .collection('notes')
+        .orderBy('createdAt', descending: true)
+        .get();
 
     final List<Note> deletedNotes = [];
 
     for (var doc in query.docs) {
       final data = doc.data();
-      final isDeleted = data['isDeleted'] ?? false;
+      final deletedAtStr = data['deletedAt'];
+      final deletedAt = deletedAtStr != null ? DateTime.tryParse(deletedAtStr) : null;
 
-      if (isDeleted == false) continue; // Hanya tampilkan yang terhapus
+      if (deletedAt == null) continue; // Hanya catatan yang sudah dihapus (ada deletedAt)
 
       final encrypted = data['encryptedContent'];
       final iv = data['iv'];
@@ -140,7 +140,7 @@ class NoteService {
             id: doc.id,
             encryptedContent: encrypted,
             decryptedContent: decrypted,
-            isDeleted: isDeleted,
+            deletedAt: deletedAt,
           ),
         );
       } catch (e) {

@@ -24,9 +24,27 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
     if (user != null) {
       try {
         final notes = await _noteService.getDeletedNotes(user.uid);
+
+        final now = DateTime.now();
+        final retentionDuration = Duration(days: 30);
+
+        // Filter hanya catatan dengan deletedAt dalam 30 hari terakhir
+        final validDeletedNotes = notes.where((note) {
+          if (note.deletedAt == null) return false;
+          return now.difference(note.deletedAt!).inDays < retentionDuration.inDays;
+        }).toList();
+
         setState(() {
-          _deletedNotes = notes;
+          _deletedNotes = validDeletedNotes;
         });
+
+        // Opsional: Otomatis hapus catatan yang lewat batas
+        for (var note in notes) {
+          if (note.deletedAt != null &&
+              now.difference(note.deletedAt!).inDays >= retentionDuration.inDays) {
+            await _noteService.deleteNote(user.uid, note.id);
+          }
+        }
       } catch (e) {
         debugPrint("❌ Gagal memuat catatan sampah: $e");
         if (context.mounted) {
@@ -124,8 +142,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                     final title =
                         note.decryptedContent?.split('\n').first ?? 'Tanpa Judul';
                     final body =
-                        note.decryptedContent?.split('\n').skip(1).join('\n') ??
-                            '';
+                        note.decryptedContent?.split('\n').skip(1).join('\n') ?? '';
 
                     return Card(
                       margin: const EdgeInsets.only(bottom: 12),
@@ -141,15 +158,24 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        subtitle: Text(
-                          body,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.bodyMedium,
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              body,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: textTheme.bodyMedium,
+                            ),
+                            if (note.deletedAt != null)
+                              Text(
+                                'Dihapus: ${note.deletedAt!.toLocal().toString().split('.')[0]}',
+                                style: textTheme.bodySmall?.copyWith(color: Colors.grey),
+                              ),
+                          ],
                         ),
                         trailing: PopupMenuButton<String>(
-                          icon: Icon(Icons.more_vert,
-                              color: theme.iconTheme.color),
+                          icon: Icon(Icons.more_vert, color: theme.iconTheme.color),
                           color: theme.cardColor,
                           onSelected: (value) {
                             if (value == 'restore') {
