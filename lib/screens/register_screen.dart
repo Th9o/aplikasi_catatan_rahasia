@@ -1,3 +1,4 @@
+import 'package:catatanku/screens/home_screen.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
@@ -67,6 +68,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } catch (e) {
       setState(() {
         errorMessage = "Register gagal: ${e.toString()}";
+      });
+    }
+
+    setState(() {
+      isLoading = false;
+    });
+  }
+
+  void handleGoogleLogin() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final user = await auth.signInWithGoogle();
+      if (user != null && mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const HomeScreen()),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = "Login Google gagal: ${e.toString()}";
       });
     }
 
@@ -174,6 +200,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                 ),
               ),
+
+              const SizedBox(height: 20),
+              GestureDetector(
+                onTap: isLoading ? null : handleGoogleLogin,
+                child: Image.asset('assets/google_signup_logo.png', height: 40),
+              ),
+
               const SizedBox(height: 24),
               TextButton(
                 onPressed: () {
