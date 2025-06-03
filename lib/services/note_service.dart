@@ -12,6 +12,7 @@ class NoteService {
       'encryptedContent': encrypted['content'],
       'iv': encrypted['iv'],
       'isDeleted': false,
+      'isFavorite': false,
       'createdAt': DateTime.now().toIso8601String(),
     };
     await _db.collection('users').doc(userId).collection('notes').add(newNote);
@@ -63,6 +64,15 @@ class NoteService {
         .update({'isDeleted': false});
   }
 
+  Future<void> updateFavorite(String userId, String noteId, bool isFavorite) async {
+    await _db
+        .collection('users')
+        .doc(userId)
+        .collection('notes')
+        .doc(noteId)
+        .update({'isFavorite': isFavorite});
+  }
+
   Future<List<Note>> getDecryptedNotes(String userId) async {
     final query =
         await _db
@@ -82,6 +92,7 @@ class NoteService {
 
       final encrypted = data['encryptedContent'];
       final iv = data['iv'];
+      final isFavorite = data['isFavorite'] ?? false;
 
       try {
         final decrypted = await _encryptor.decrypt(encrypted, iv);
@@ -91,7 +102,8 @@ class NoteService {
             encryptedContent: encrypted,
             decryptedContent: decrypted,
             isDeleted: isDeleted,
-          ),
+            isFavorite: isFavorite,
+          )
         );
       } catch (e) {
         print('❌ Gagal dekripsi catatan ${doc.id}: $e');

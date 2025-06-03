@@ -2,12 +2,14 @@ class Note {
   final String id;
   final String encryptedContent;
   final String? decryptedContent; // Bisa null kalau belum didekripsi
+  bool isFavorite;
 
   Note({
     required this.id,
     required this.encryptedContent,
     this.decryptedContent,
     required isDeleted,
+    this.isFavorite = false,
   });
 
   // Parse dari Firebase
@@ -17,6 +19,7 @@ class Note {
       encryptedContent: data['encryptedContent'] ?? '',
       decryptedContent: null,
       isDeleted: null, // Default null, nanti didekripsi terpisah
+      isFavorite: data['isFavorite'] ?? false,
     );
   }
 
@@ -28,6 +31,7 @@ class Note {
       'encryptedContent': encryptedContent,
       'iv': iv,
       'createdAt': DateTime.now().toIso8601String(),
+      'isFavorite': isFavorite,
     };
   }
 }
