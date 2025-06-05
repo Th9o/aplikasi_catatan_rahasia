@@ -1,7 +1,6 @@
-//settings_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/theme_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -13,6 +12,27 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isFingerprintEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFingerprintPreference();
+  }
+
+  Future<void> _loadFingerprintPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isFingerprintEnabled = prefs.getBool('biometric_enabled') ?? false;
+    });
+  }
+
+  Future<void> _toggleFingerprint(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('biometric_enabled', value);
+    setState(() {
+      _isFingerprintEnabled = value;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -50,11 +70,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             title: const Text('Gunakan Sidik Jari'),
             value: _isFingerprintEnabled,
             activeColor: Theme.of(context).colorScheme.primary,
-            onChanged: (value) {
-              setState(() {
-                _isFingerprintEnabled = value;
-              });
-            },
+            onChanged: _toggleFingerprint,
             secondary: const Icon(Icons.fingerprint),
           ),
           const Divider(height: 32),

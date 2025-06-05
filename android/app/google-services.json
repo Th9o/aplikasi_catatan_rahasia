@@ -12,7 +12,20 @@
           "package_name": "com.example.catatanku"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "845597766386-glllkak0nb7k5q2lq574j1h5qutb1dve.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.catatanku",
+            "certificate_hash": "b56c090691c9d6f9bb11977f6091ade5ab7de4f1"
+          }
+        },
+        {
+          "client_id": "845597766386-59qcc8ticlrpifh8uoamdo9d4ldkln6s.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBEKFctLF5qr_SobIpsyJ4-gQznOQVP9T0"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "845597766386-59qcc8ticlrpifh8uoamdo9d4ldkln6s.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

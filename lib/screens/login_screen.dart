@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import 'register_screen.dart';
 import 'home_screen.dart';
@@ -38,6 +39,9 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final user = await auth.login(email, password);
       if (user != null && mounted) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('is_logged_in', true); // ✅ Simpan status login
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const HomeScreen()),
@@ -71,6 +75,12 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final user = await auth.signInWithGoogle();
       if (user != null && mounted) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool(
+          'is_logged_in',
+          true,
+        ); // ✅ Simpan status login Google
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const HomeScreen()),
@@ -195,7 +205,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 onTap: isLoading ? null : handleGoogleLogin,
                 child: Image.asset('assets/google_signin_logo.png', height: 40),
               ),
-
               const SizedBox(height: 24),
               TextButton(
                 onPressed: () async {

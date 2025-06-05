@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../services/auth_service.dart';
 import '../services/note_service.dart';
@@ -56,9 +57,9 @@ class _HomeScreenState extends State<HomeScreen> {
       debugPrint('Gagal memuat catatan: $e');
       setState(() => _isLoading = false);
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Terjadi kesalahan: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Terjadi kesalahan: $e')));
       }
     }
   }
@@ -73,10 +74,13 @@ class _HomeScreenState extends State<HomeScreen> {
   void _filterNotes() {
     final query = _searchController.text.toLowerCase();
     setState(() {
-      _filteredNotes = _notes
-          .where((note) =>
-              (note.decryptedContent ?? '').toLowerCase().contains(query))
-          .toList();
+      _filteredNotes =
+          _notes
+              .where(
+                (note) =>
+                    (note.decryptedContent ?? '').toLowerCase().contains(query),
+              )
+              .toList();
     });
   }
 
@@ -89,14 +93,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showSnackBar(String message) {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          duration: const Duration(seconds: 2),
-        ),
+        SnackBar(content: Text(message), duration: const Duration(seconds: 2)),
       );
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -120,9 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.pop(context);
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (_) => const EditProfileScreen(),
-                  ),
+                  MaterialPageRoute(builder: (_) => const EditProfileScreen()),
                 ).then((result) {
                   if (result == true) {
                     _showSnackBar('Profil berhasil diperbarui');
@@ -135,21 +133,28 @@ class _HomeScreenState extends State<HomeScreen> {
                   gradient: LinearGradient(
                     colors: [
                       colorScheme.primary,
-                      colorScheme.primary.withOpacity(0.8)
+                      colorScheme.primary.withOpacity(0.8),
                     ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
                 ),
-                padding:
-                    const EdgeInsets.only(top: 48, bottom: 24, left: 20, right: 20),
+                padding: const EdgeInsets.only(
+                  top: 48,
+                  bottom: 24,
+                  left: 20,
+                  right: 20,
+                ),
                 child: Row(
                   children: [
                     CircleAvatar(
                       radius: 30,
                       backgroundColor: Colors.white,
-                      child:
-                          Icon(Icons.person, size: 30, color: colorScheme.primary),
+                      child: Icon(
+                        Icons.person,
+                        size: 30,
+                        color: colorScheme.primary,
+                      ),
                     ),
                     const SizedBox(width: 16),
                     Expanded(
@@ -166,8 +171,9 @@ class _HomeScreenState extends State<HomeScreen> {
                           const SizedBox(height: 4),
                           Text(
                             _userEmail,
-                            style: theme.textTheme.bodySmall!
-                                .copyWith(color: Colors.white70),
+                            style: theme.textTheme.bodySmall!.copyWith(
+                              color: Colors.white70,
+                            ),
                           ),
                         ],
                       ),
@@ -238,24 +244,32 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () async {
                   final shouldLogout = await showDialog<bool>(
                     context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Konfirmasi Logout'),
-                      content: const Text('Apakah Anda yakin ingin logout?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, false),
-                          child: const Text('Batal'),
+                    builder:
+                        (context) => AlertDialog(
+                          title: const Text('Konfirmasi Logout'),
+                          content: const Text(
+                            'Apakah Anda yakin ingin logout?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('Batal'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text('Logout'),
+                            ),
+                          ],
                         ),
-                        TextButton(
-                          onPressed: () => Navigator.pop(context, true),
-                          child: const Text('Logout'),
-                        ),
-                      ],
-                    ),
                   );
 
                   if (shouldLogout == true) {
                     await AuthService().logout();
+
+                    // Hapus status login biometrik
+                    final prefs = await SharedPreferences.getInstance();
+                    await prefs.remove('is_logged_in');
+
                     if (context.mounted) {
                       Navigator.pushReplacement(
                         context,
@@ -272,156 +286,222 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _loadNotes,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Cari catatan...',
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        filled: true,
-                        fillColor: theme.cardColor,
-                      ),
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                  ),
-                  Expanded(
-                    child: _filteredNotes.isEmpty
-                        ? Center(
-                            child: Text(
-                              "Catatan tidak ditemukan.",
-                              style: theme.textTheme.bodyLarge!
-                                  .copyWith(color: Colors.grey),
-                            ),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: _filteredNotes.length,
-                            itemBuilder: (context, index) {
-                              final note = _filteredNotes[index];
-                              final title = note.decryptedContent?.split('\n').first ?? 'Tanpa Judul';
-                              final body = note.decryptedContent?.split('\n').skip(1).join('\n') ?? '';
-
-                              return Card(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
-                                ),
-                                color: theme.cardColor,
-                                elevation: 3,
-                                child: ListTile(
-                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                  title: Text(
-                                    title,
-                                    style: theme.textTheme.titleMedium,
-                                  ),
-                                  subtitle: Text(
-                                    body,
-                                    maxLines: 3,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.bodySmall,
-                                  ),
-                                  onTap: () async {
-                                    await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => NoteEditorPage(
-                                          existingNoteId: note.id,
-                                          existingNoteContent: note.decryptedContent,
-                                        ),
-                                      ),
-                                    );
-                                    _loadNotes();
-                                  },
-                                  trailing: PopupMenuButton<String>(
-                                    onSelected: (value) async {
-                                      final user = _auth.currentUser;
-                                      if (user == null) return;
-
-                                      switch (value) {
-                                        case 'toggle_favorite':
-                                          final newFavoriteStatus = !note.isFavorite;
-                                          setState(() {
-                                            note.isFavorite = newFavoriteStatus;
-                                          });
-                                          await _noteService.updateFavorite(user.uid, note.id, newFavoriteStatus);
-                                            _showSnackBar(newFavoriteStatus
-                                              ? 'Catatan ditambahkan ke Favorit'
-                                              : 'Catatan dihapus dari Favorit');
-                                            _loadNotes();
-
-                                          break;
-
-                                        case 'delete_note':
-                                          final confirm = await showDialog<bool>(
-                                            context: context,
-                                            builder: (_) => AlertDialog(
-                                              title: const Text('Hapus Catatan'),
-                                              content: const Text('Yakin ingin memindahkan catatan ke Sampah?'),
-                                              actions: [
-                                                TextButton(
-                                                  onPressed: () => Navigator.pop(context, false),
-                                                  child: const Text('Batal'),
-                                                ),
-                                                TextButton(
-                                                  onPressed: () => Navigator.pop(context, true),
-                                                  child: const Text('Hapus'),
-                                                ),
-                                              ],
-                                            ),
-                                          );
-                                          if (confirm == true) {
-                                              await _noteService.moveToTrash(user.uid, note.id);
-                                              _showSnackBar('Catatan berhasil dihapus');
-                                              _loadNotes();
-                                            }
-                                          break;
-                                      }
-                                    },
-                                    itemBuilder: (context) => [
-                                      PopupMenuItem(
-                                        value: 'toggle_favorite',
-                                        child: Row(
-                                          children: [
-                                            Icon(
-                                              note.isFavorite ? Icons.star : Icons.star_border,
-                                              color: note.isFavorite ? Colors.amber : null,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(note.isFavorite ? 'Hapus dari Favorit' : 'Tambah ke Favorit'),
-                                          ],
-                                        ),
-                                      ),
-                                      const PopupMenuItem(
-                                        value: 'delete_note',
-                                        child: Row(
-                                          children: [
-                                            Icon(Icons.delete, color: Colors.redAccent),
-                                            SizedBox(width: 8),
-                                            Text('Hapus Catatan'),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
+      body:
+          _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : RefreshIndicator(
+                onRefresh: _loadNotes,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Cari catatan...',
+                          prefixIcon: const Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
                           ),
+                          filled: true,
+                          fillColor: theme.cardColor,
+                        ),
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ),
+                    Expanded(
+                      child:
+                          _filteredNotes.isEmpty
+                              ? Center(
+                                child: Text(
+                                  "Catatan tidak ditemukan.",
+                                  style: theme.textTheme.bodyLarge!.copyWith(
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              )
+                              : ListView.builder(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                itemCount: _filteredNotes.length,
+                                itemBuilder: (context, index) {
+                                  final note = _filteredNotes[index];
+                                  final title =
+                                      note.decryptedContent
+                                          ?.split('\n')
+                                          .first ??
+                                      'Tanpa Judul';
+                                  final body =
+                                      note.decryptedContent
+                                          ?.split('\n')
+                                          .skip(1)
+                                          .join('\n') ??
+                                      '';
 
-                  ),
-                ],
+                                  return Card(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    color: theme.cardColor,
+                                    elevation: 3,
+                                    child: ListTile(
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 12,
+                                          ),
+                                      title: Text(
+                                        title,
+                                        style: theme.textTheme.titleMedium,
+                                      ),
+                                      subtitle: Text(
+                                        body,
+                                        maxLines: 3,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: theme.textTheme.bodySmall,
+                                      ),
+                                      onTap: () async {
+                                        await Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (_) => NoteEditorPage(
+                                                  existingNoteId: note.id,
+                                                  existingNoteContent:
+                                                      note.decryptedContent,
+                                                ),
+                                          ),
+                                        );
+                                        _loadNotes();
+                                      },
+                                      trailing: PopupMenuButton<String>(
+                                        onSelected: (value) async {
+                                          final user = _auth.currentUser;
+                                          if (user == null) return;
+
+                                          switch (value) {
+                                            case 'toggle_favorite':
+                                              final newFavoriteStatus =
+                                                  !note.isFavorite;
+                                              setState(() {
+                                                note.isFavorite =
+                                                    newFavoriteStatus;
+                                              });
+                                              await _noteService.updateFavorite(
+                                                user.uid,
+                                                note.id,
+                                                newFavoriteStatus,
+                                              );
+                                              _showSnackBar(
+                                                newFavoriteStatus
+                                                    ? 'Catatan ditambahkan ke Favorit'
+                                                    : 'Catatan dihapus dari Favorit',
+                                              );
+                                              _loadNotes();
+
+                                              break;
+
+                                            case 'delete_note':
+                                              final confirm = await showDialog<
+                                                bool
+                                              >(
+                                                context: context,
+                                                builder:
+                                                    (_) => AlertDialog(
+                                                      title: const Text(
+                                                        'Hapus Catatan',
+                                                      ),
+                                                      content: const Text(
+                                                        'Yakin ingin memindahkan catatan ke Sampah?',
+                                                      ),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed:
+                                                              () =>
+                                                                  Navigator.pop(
+                                                                    context,
+                                                                    false,
+                                                                  ),
+                                                          child: const Text(
+                                                            'Batal',
+                                                          ),
+                                                        ),
+                                                        TextButton(
+                                                          onPressed:
+                                                              () =>
+                                                                  Navigator.pop(
+                                                                    context,
+                                                                    true,
+                                                                  ),
+                                                          child: const Text(
+                                                            'Hapus',
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                              );
+                                              if (confirm == true) {
+                                                await _noteService.moveToTrash(
+                                                  user.uid,
+                                                  note.id,
+                                                );
+                                                _showSnackBar(
+                                                  'Catatan berhasil dihapus',
+                                                );
+                                                _loadNotes();
+                                              }
+                                              break;
+                                          }
+                                        },
+                                        itemBuilder:
+                                            (context) => [
+                                              PopupMenuItem(
+                                                value: 'toggle_favorite',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      note.isFavorite
+                                                          ? Icons.star
+                                                          : Icons.star_border,
+                                                      color:
+                                                          note.isFavorite
+                                                              ? Colors.amber
+                                                              : null,
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Text(
+                                                      note.isFavorite
+                                                          ? 'Hapus dari Favorit'
+                                                          : 'Tambah ke Favorit',
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                              const PopupMenuItem(
+                                                value: 'delete_note',
+                                                child: Row(
+                                                  children: [
+                                                    Icon(
+                                                      Icons.delete,
+                                                      color: Colors.redAccent,
+                                                    ),
+                                                    SizedBox(width: 8),
+                                                    Text('Hapus Catatan'),
+                                                  ],
+                                                ),
+                                              ),
+                                            ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                    ),
+                  ],
+                ),
               ),
-            ),
       floatingActionButton: Container(
         margin: const EdgeInsets.all(8),
         decoration: const BoxDecoration(
@@ -466,8 +546,9 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(width: 16),
             Text(
               title,
-              style: theme.textTheme.bodyLarge!
-                  .copyWith(fontWeight: FontWeight.w500),
+              style: theme.textTheme.bodyLarge!.copyWith(
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),

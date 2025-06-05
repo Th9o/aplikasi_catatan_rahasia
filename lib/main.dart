@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:provider/provider.dart'; // Wajib untuk ThemeProvider
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
-import 'models/theme_provider.dart'; // Import yang benar
+import 'screens/biometric_lock_screen.dart';
+import 'models/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,24 +49,44 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
 
   @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  bool _loading = true;
+  Widget _nextScreen = const LoginScreen();
+
+  @override
+  void initState() {
+    super.initState();
+    _decideStartScreen();
+  }
+
+  Future<void> _decideStartScreen() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final prefs = await SharedPreferences.getInstance();
+      final biometricEnabled = prefs.getBool('biometric_enabled') ?? false;
+      final alreadyLoggedIn = prefs.getBool('is_logged_in') ?? false;
+
+      if (biometricEnabled && alreadyLoggedIn) {
+        _nextScreen = const BiometricLockScreen();
+      } else {
+        _nextScreen = const HomeScreen();
+      }
+    }
+
+    setState(() => _loading = false);
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
-        } else if (snapshot.hasData) {
-          return const HomeScreen();
-        } else {
-          return const LoginScreen();
-        }
-      },
-    );
+    return _loading
+        ? const Scaffold(body: Center(child: CircularProgressIndicator()))
+        : _nextScreen;
   }
 }
